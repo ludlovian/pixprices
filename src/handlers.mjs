@@ -1,10 +1,19 @@
 import { effect } from '@preact/signals-core'
+import send from '@polka/send-type'
 
 import equal from 'pixutil/equal'
 
 import { $state, startTask, completeTask, failTask } from './model.mjs'
 import { updatePriceSheet } from './sheet.mjs'
 import { serialize, deserialize } from './util.mjs'
+import config from './config.mjs'
+
+export function getState (req, res) {
+  const { id, url, status } = $state.value.task
+  const { isTest } = config
+  const state = { id, url, status, isTest }
+  send(res, 200, serialize(state))
+}
 
 export function getStateStream (req, res) {
   const prev = {}

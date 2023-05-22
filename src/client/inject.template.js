@@ -1,6 +1,8 @@
 ;(async () => {
-  const state = JSON.parse('{{INJECT_STATE}}')
+  const server = '{{SERVER_ORIGIN}}'
   const { location } = window
+
+  const state = await fetch(`${server}/status`).then(res => res.json())
 
   if (location.href !== state.url) return
 
@@ -80,8 +82,8 @@
   }
 
   async function postPrices (prices) {
-    const { origin, id } = state
-    const url = `${origin}/task/${id}`
+    const { id } = state
+    const url = `${server}/task/${id}`
     const body = JSON.stringify(prices)
     const method = 'POST'
 

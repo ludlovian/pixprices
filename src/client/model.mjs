@@ -21,7 +21,7 @@ const $isDue = computed(() => $task.value.status === 'due')
 // Fetch status data
 //
 
-const es = new window.EventSource('/status')
+const es = new window.EventSource('/status/updates')
 es.onmessage = ({ data }) =>
   batch(() => {
     const state = deserialize(JSON.parse(data))
@@ -63,7 +63,6 @@ effect(() => {
 //
 // Exports
 //
-window.pix = { isWorker, $task, $recent, $fmtSecs }
 export { isWorker, $task, $recent, $fmtSecs }
 
 // Utility

@@ -1,15 +1,21 @@
+import { hostname } from 'node:os'
+import { argv } from 'node:process'
 import { readFileSync } from 'node:fs'
 
 import { parse } from '@lukeed/ms'
 
-const isTest = process.argv.includes('test')
+const isTest = argv.includes('test')
 
 //
 // HTTPS server
 //
 
 const server = (() => {
-  const host = isTest ? 'pixclient2.uk.to' : 'pi1.local'
+  const HOSTS = {
+    client2: 'pixclient2.uk.to',
+    pi1: 'pi1.local'
+  }
+  const host = HOSTS[hostname()]
   const port = 5234
   const origin = `https://${host}:${port}`
   const ssl = {

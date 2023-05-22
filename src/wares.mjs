@@ -50,37 +50,6 @@ export function log (req, res, next) {
 }
 
 //
-// Serve static files
-//
-
-export function serveStatic (root, { rename, modify } = {}) {
-  const cache = {}
-
-  return async (req, res, next) => {
-    let { path } = req
-    path = rename ? rename(path) : path
-    if (!path || path.endsWith('/')) return next()
-    const file = join(root, path)
-    let body = cache[file]
-    if (body === undefined) {
-      try {
-        body = await readFile(file, 'utf8')
-      } catch (err) {
-        if (!['EISDIR', 'ENOENT'].includes(err.code)) throw err
-        body = null
-      }
-      if (!config.isTest) cache[file] = body
-    }
-    // not a valid file
-    if (body == null) return next()
-    // modify if reqd
-    if (modify) body = modify({ res, path, body })
-
-    send(res, 200, body, { 'Content-Type': lookup(file) })
-  }
-}
-
-//
 // Parse any JSON body
 //
 
