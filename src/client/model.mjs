@@ -1,37 +1,70 @@
-import { signal, effect, computed, batch } from './imports.mjs'
-import { getQuery, deserialize } from './util.mjs'
+import {
+  signal,
+  effect,
+  computed,
+  batch,
+  fromNow,
+  deserialize
+} from './imports.mjs'
+import { getQuery, fmtDuration } from './util.mjs'
 
 //
 // The core data
 //
 
-const $task = signal({})
-const $recent = signal([])
+export const $server = signal({})
+export const $task = signal({})
+export const $recent = signal([])
 const $dueSecs = signal(0)
-const isWorker = getQuery().role === 'worker'
+const { role = 'watcher' } = getQuery()
+export const isWorker = role === 'worker'
+export const $serverUptime = signal('')
 
 //
 // Derived
 //
 
-const $fmtSecs = computed(() => fmtDuration($dueSecs.value))
+window.pix = { $server, $task, $recent }
+
+export const $fmtSecs = computed(() => fmtDuration($dueSecs.value))
 const $isDue = computed(() => $task.value.status === 'due')
 
 //
 // Fetch status data
 //
 
-const es = new window.EventSource('/status/updates')
+const watchItems = [
+  ['server', $server],
+  ['task', $task],
+  ['history', $recent]
+]
+
+const es = new window.EventSource(`/status/updates?role=${role}`)
 es.onmessage = ({ data }) =>
   batch(() => {
     const state = deserialize(JSON.parse(data))
-    if (state.task) $task.value = state.task
-    if (state.history) $recent.value = state.history
+    for (const [item, $sig] of watchItems) {
+      if (state[item]) $sig.value = state[item]
+    }
   })
 
 //
 // Automatic side-effects
 //
+
+//
+// Tick down server uptime
+//
+effect(() => {
+  tick()
+  const tm = setInterval(tick, 10 * 1000)
+  return () => clearInterval(tm)
+  function tick () {
+    const dt = $server.value.started
+    if (!dt) return
+    $serverUptime.value = fromNow(dt, { suffix: true })
+  }
+})
 
 //
 // Countdown timer until due
@@ -59,24 +92,3 @@ effect(() => {
   const { id } = $task.value
   window.location.assign(`/task/${id}`)
 })
-
-//
-// Exports
-//
-export { isWorker, $task, $recent, $fmtSecs }
-
-// Utility
-
-function fmtDuration (secs) {
-  const [mins, ss] = divmod(secs, 60)
-  const [hrs, mm] = divmod(mins, 60)
-
-  return [hrs, ('00' + mm).slice(-2), ('00' + ss).slice(-2)]
-    .filter(Boolean)
-    .join(':')
-
-  function divmod (a, b) {
-    const rem = a % b
-    return [(a - rem) / b, rem]
-  }
-}

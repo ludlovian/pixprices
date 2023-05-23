@@ -1,14 +1,26 @@
+import { parse as parseQS } from 'node:querystring'
+
 import { effect } from '@preact/signals-core'
 import send from '@polka/send-type'
 
 import equal from 'pixutil/equal'
+import { serialize, deserialize } from 'pixutil/json'
 
-import { $state, startTask, completeTask, failTask } from './model.mjs'
+import {
+  $state,
+  addClient,
+  startTask,
+  completeTask,
+  failTask
+} from './model.mjs'
 import { updatePriceSheet } from './sheet.mjs'
-import { serialize, deserialize } from './util.mjs'
 import config from './config.mjs'
 
 export function getState (req, res) {
+  send(res, 200, serialize($state.value))
+}
+
+export function getInjectState (req, res) {
   const { id, url, status } = $state.value.task
   const { isTest } = config
   const state = { id, url, status, isTest }
@@ -16,7 +28,10 @@ export function getState (req, res) {
 }
 
 export function getStateStream (req, res) {
+  const role = req.search ? parseQS(req.search.slice(1)).role : undefined
   const prev = {}
+
+  const removeClient = addClient(role)
 
   res.writeHead(200, {
     'Cache-Control': 'no-cache',
@@ -25,7 +40,10 @@ export function getStateStream (req, res) {
   })
 
   const unsub = effect(sendNewState)
-  req.on('close', unsub)
+  req.on('close', () => {
+    removeClient()
+    unsub()
+  })
 
   function sendNewState () {
     const curr = $state.value

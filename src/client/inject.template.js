@@ -2,7 +2,7 @@
   const server = '{{SERVER_ORIGIN}}'
   const { location } = window
 
-  const state = await fetch(`${server}/status`).then(res => res.json())
+  const state = await fetch(`${server}/status/inject`).then(res => res.json())
 
   if (location.href !== state.url) return
 
@@ -19,7 +19,11 @@
     await postPrices(prices)
     window.stop()
 
-    location.replace(`${state.origin}/?role=worker`)
+    if (state.isTest) {
+      await new Promise(resolve => setTimeout(resolve, 10 * 1000))
+    }
+
+    location.replace(`${server}/?role=worker`)
   }
 
   //

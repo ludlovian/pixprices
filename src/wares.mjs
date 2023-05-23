@@ -1,9 +1,3 @@
-import { join } from 'node:path'
-import { readFile } from 'node:fs/promises'
-
-import send from '@polka/send-type'
-import { lookup } from 'mrmime'
-
 import { dateFormatter } from './util.mjs'
 import config from './config.mjs'
 
@@ -23,7 +17,7 @@ export function cors (req, res, next) {
   }
   res.setHeader('Access-Control-Allow-Origin', origin)
   // not a preflight (ie a real GET or POST)
-  if (req.method !== 'OPTION') return next()
+  if (req.method !== 'OPTIONS') return next()
   // Handle preflights ourselves
   res
     .writeHead(200, {
@@ -40,13 +34,18 @@ export function cors (req, res, next) {
 export function log (req, res, next) {
   const when = fmtDate()
   const { method, path } = req
+
   res.once('finish', () => {
     const { statusCode } = res
     // don't bother logging the boring normal stuff
-    if (!config.isTest && statusCode === 200 && method === 'GET') return
+    if (!config.isTest && isNormal({ statusCode, method })) return
     console.log([when, method, path, statusCode].join(' - '))
   })
   next()
+
+  function isNormal ({ statusCode, method }) {
+    return statusCode === 200 && ['GET', 'OPTIONS', 'HEAD'].includes(method)
+  }
 }
 
 //

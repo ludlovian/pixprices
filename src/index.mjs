@@ -7,6 +7,7 @@ import sirv from 'sirv'
 import config from './config.mjs'
 import { cors, log, parseBody } from './wares.mjs'
 import {
+  getInjectState,
   getState,
   getStateStream,
   requestTask,
@@ -19,16 +20,18 @@ function main () {
   const server = createServer(config.server.ssl)
   polka({ server })
     // middleware
-    .use(sirv('src/client', { dev: config.isTest })) // static files
-    .use(cors) // handle CORS
     .use(log) // log to screen
+    .use(cors) // handle CORS
+    .use(sirv('src/client', { dev: config.isTest })) // static files
     .use(parseBody) // gather JSON bodies
 
     // routes
-    .get('/status', getState)
+    .get('/status/inject', getInjectState)
+    .get('/status/state', getState)
     .get('/status/updates', getStateStream)
     .get('/task/:id', requestTask)
     .post('/task/:id', postPrices)
+
     // start
     .listen(config.server.port, '0.0.0.0', () => {
       console.log(`Listening on port ${config.server.port}`)

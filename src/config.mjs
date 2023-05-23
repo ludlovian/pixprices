@@ -74,12 +74,16 @@ const jobs = (() => {
 // prices spreadsheet
 //
 
-const prices = {
-  id: '1UdNhJNLWriEJtAJdbxwswGTl8CBcDK1nkEmJvwbc_5c',
-  range: rows => `Prices!A2:E${rows ? rows + 1 : ''}`,
-  credentials: 'creds/credentials.json',
-  pruneAfter: parse('7d')
-}
+const prices = (() => {
+  const tab = isTest ? 'Test' : 'Prices'
+
+  return {
+    id: '1UdNhJNLWriEJtAJdbxwswGTl8CBcDK1nkEmJvwbc_5c',
+    range: rows => `${tab}!A2:E${rows ? rows + 1 : ''}`,
+    credentials: 'creds/credentials.json',
+    pruneAfter: parse('7d')
+  }
+})()
 
 //
 // Exports

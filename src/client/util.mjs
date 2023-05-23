@@ -1,7 +1,3 @@
-//
-// Utils
-//
-
 export function getQuery () {
   return Object.fromEntries(
     window.location.search
@@ -24,17 +20,16 @@ export function fmtLongDate (d) {
   ].join(' ')
 }
 
-//
-// Duplicated from server
-//
+export function fmtDuration (secs) {
+  const [mins, ss] = divmod(secs, 60)
+  const [hrs, mm] = divmod(mins, 60)
 
-const $DATE = '$date$'
+  return [hrs, ('00' + mm).slice(-2), ('00' + ss).slice(-2)]
+    .filter(Boolean)
+    .join(':')
 
-export function deserialize (x) {
-  if (Array.isArray(x)) return x.map(deserialize)
-  if (x === null || typeof x !== 'object') return x
-  if ($DATE in x) return new Date(x[$DATE])
-  return Object.fromEntries(
-    Object.entries(x).map(([k, v]) => [k, deserialize(v)])
-  )
+  function divmod (a, b) {
+    const rem = a % b
+    return [(a - rem) / b, rem]
+  }
 }

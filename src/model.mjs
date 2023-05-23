@@ -16,10 +16,20 @@ const $taskSpec = signal({})
 const $taskStatus = signal(undefined)
 const $taskActivity = signal([])
 const $recent = signal([])
+const $watcherCount = signal(0)
+const $workerCount = signal(0)
+const serverStarted = new Date()
 
 //
 // Derived data
 //
+
+const $server = computed(() => ({
+  started: serverStarted,
+  workers: $workerCount.value,
+  watchers: $watcherCount.value,
+  isTest: config.isTest
+}))
 
 const $task = computed(() => ({
   ...$taskSpec.value,
@@ -28,17 +38,10 @@ const $task = computed(() => ({
 }))
 
 const $state = computed(() => ({
+  server: $server.value,
   task: $task.value,
   history: $recent.value
 }))
-
-const $injectState = computed(() =>
-  JSON.stringify({
-    origin: config.server.origin,
-    url: $task.value.url,
-    id: $task.value.id
-  })
-)
 
 const $taskMissing = computed(() => $taskSpec.value.id == null)
 const $taskFinished = computed(() => [DONE, ERROR].includes($taskStatus.value))
@@ -70,6 +73,15 @@ effect(() => {
 //
 // Action functions
 //
+
+function addClient (role) {
+  const $sig = role === 'worker' ? $workerCount : $watcherCount
+  $sig.value += 1
+  return () => {
+    $sig.value = Math.max(0, $sig.value - 1)
+    return true
+  }
+}
 
 function addNewTask () {
   batch(() => {
@@ -125,4 +137,4 @@ function record ($a, message) {
 // Exports
 //
 
-export { $state, $injectState, startTask, completeTask, failTask }
+export { $state, addClient, startTask, completeTask, failTask }
