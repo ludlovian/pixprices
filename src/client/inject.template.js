@@ -1,10 +1,14 @@
 ;(async () => {
   const server = '{{SERVER_ORIGIN}}'
   const { location } = window
+  console.log('PixPrices js injected.')
 
   const state = await fetch(`${server}/status/inject`).then(res => res.json())
 
-  if (location.href !== state.url) return
+  if (location.href !== state.url) {
+    console.log(`Not on ${state.url}\nSkipping.`)
+    return
+  }
 
   main()
 
@@ -20,6 +24,7 @@
     window.stop()
 
     if (state.isTest) {
+      console.log('Prices posted. Waiting to return.')
       await new Promise(resolve => setTimeout(resolve, 10 * 1000))
     }
 
