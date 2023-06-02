@@ -11,11 +11,7 @@ const isTest = argv.includes('test')
 //
 
 const server = (() => {
-  const HOSTS = {
-    client2: 'pixclient2.uk.to',
-    pi1: 'pi1.local'
-  }
-  const host = HOSTS[hostname()]
+  const host = `${hostname()}.pix.uk.to`
   const port = 5234
   const origin = `https://${host}:${port}`
   const ssl = {

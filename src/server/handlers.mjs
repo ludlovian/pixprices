@@ -5,14 +5,9 @@ import send from '@polka/send-type'
 
 import equal from 'pixutil/equal'
 import { serialize, deserialize } from 'pixutil/json'
+import Bouncer from 'bouncer'
 
-import {
-  $state,
-  addClient,
-  startTask,
-  completeTask,
-  failTask
-} from './model.mjs'
+import { $state, actions } from './model.mjs'
 import { updatePriceSheet } from './sheet.mjs'
 import config from './config.mjs'
 
@@ -31,7 +26,7 @@ export function getStateStream (req, res) {
   const role = req.search ? parseQS(req.search.slice(1)).role : undefined
   const prev = {}
 
-  const removeClient = addClient(role)
+  const removeClient = actions.addClient(role)
 
   res.writeHead(200, {
     'Cache-Control': 'no-cache',
@@ -39,10 +34,20 @@ export function getStateStream (req, res) {
     'Content-Type': 'text/event-stream'
   })
 
-  const unsub = effect(sendNewState)
+  // The bouncer is used to throttle the server side events to one
+  // every 250ms
+  const bouncer = new Bouncer({ every: 250, fn: sendNewState })
+
+  const unsub = effect(() => {
+    // we don't actually use $state here, but we reference it
+    // to ensure it gets called when the signal changes
+    bouncer.fire($state.value)
+  })
+
   req.on('close', () => {
-    removeClient()
+    bouncer.stop()
     unsub()
+    removeClient()
   })
 
   function sendNewState () {
@@ -51,6 +56,7 @@ export function getStateStream (req, res) {
     for (const k in curr) {
       if (!equal(curr[k], prev[k])) diff[k] = prev[k] = curr[k]
     }
+    if (Object.keys(diff) === 0) return // no difference, so no send
     const data = JSON.stringify(serialize(diff))
     res.write(`data: ${data}\n\n`)
   }
@@ -60,7 +66,7 @@ export function requestTask (req, res) {
   const id = toNumber(req.params.id)
   if (id !== $state.value.task.id) return res.writeHead(404).end()
 
-  startTask(req, res)
+  actions.startTask(req, res)
 }
 
 export async function postPrices (req, res) {
@@ -77,7 +83,7 @@ export async function postPrices (req, res) {
     await updatePriceSheet({ source: `lse:${source}`, prices })
 
     const message = `${prices.length} prices from ${source}`
-    completeTask(message)
+    actions.completeTask(message)
 
     retData = { message, ok: true }
   } catch (err) {
@@ -87,7 +93,7 @@ export async function postPrices (req, res) {
     retData = { message, ok: false }
     statusCode = 503
 
-    failTask(message)
+    actions.failTask(message)
   }
 
   const s = JSON.stringify(serialize(retData))

@@ -1,12 +1,17 @@
 import config from './config.mjs'
 import { signal, computed, effect, batch } from '@preact/signals-core'
-import { nextTask } from './task.mjs'
+
+import Timer from 'timer'
+
+import { getAllTasks } from './task.mjs'
 
 const WAIT = 'wait'
 const DUE = 'due'
 const START = 'start'
 const DONE = 'done'
 const ERROR = 'error'
+
+const iterTask = getAllTasks(config.jobs)
 
 //
 // Core data
@@ -56,17 +61,25 @@ effect(() => {
 
 effect(() => {
   if ($taskStatus.value === WAIT) {
-    const ms = +$taskSpec.value.due - Date.now()
-    const tm = setTimeout(() => ($taskStatus.value = DUE), ms)
-    return () => clearTimeout(tm)
+    const tm = new Timer({
+      at: $taskSpec.value.due,
+      fn: () => {
+        $taskStatus.value = DUE
+      }
+    })
+    return () => tm.cancel()
   }
 })
 
 effect(() => {
   if ($taskStatus.value === START) {
-    const ms = config.task.timeout
-    const tm = setTimeout(() => failTask('Timed out'), ms)
-    return () => clearTimeout(tm)
+    const tm = new Timer({
+      after: config.task.timeout,
+      fn: () => {
+        failTask('Timed out')
+      }
+    })
+    return () => tm.cancel()
   }
 })
 
@@ -90,7 +103,7 @@ function addNewTask () {
       .slice(0, config.task.historyLength)
 
     // load in new task and set to waiting
-    $taskSpec.value = nextTask()
+    $taskSpec.value = iterTask.next().value
     $taskStatus.value = WAIT
     $taskActivity.value = []
   })
@@ -137,4 +150,5 @@ function record ($a, message) {
 // Exports
 //
 
-export { $state, addClient, startTask, completeTask, failTask }
+const actions = { addClient, startTask, completeTask, failTask }
+export { $state, actions }

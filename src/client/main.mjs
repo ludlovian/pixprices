@@ -1,4 +1,5 @@
-import { render, html } from './imports.mjs'
+import { render, html } from 'htm/preact'
+
 import { Role, ServerStatus, NextTask, RecentTasks } from './ui.mjs'
 
 render(

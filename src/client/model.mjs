@@ -1,11 +1,8 @@
-import {
-  signal,
-  effect,
-  computed,
-  batch,
-  fromNow,
-  deserialize
-} from './imports.mjs'
+import { signal, effect, computed, batch } from '@preact/signals'
+import fromNow from 'fromnow'
+import { deserialize } from 'pixutil/json'
+import Timer from 'timer'
+
 import { getQuery, fmtDuration } from './util.mjs'
 
 //
@@ -56,14 +53,15 @@ es.onmessage = ({ data }) =>
 // Tick down server uptime
 //
 effect(() => {
-  tick()
-  const tm = setInterval(tick, 10 * 1000)
-  return () => clearInterval(tm)
-  function tick () {
-    const dt = $server.value.started
-    if (!dt) return
-    $serverUptime.value = fromNow(dt, { suffix: true })
-  }
+  const tm = new Timer({
+    every: 10 * 1000,
+    fn: () => {
+      const dt = $server.value.started
+      if (dt) $serverUptime.value = fromNow(dt, { suffix: true })
+    }
+  }).fire()
+
+  return () => tm.cancel()
 })
 
 //
@@ -72,15 +70,20 @@ effect(() => {
 
 effect(() => {
   if ($task.value.status !== 'wait') return
-  const tm = setInterval(tick, 1000)
-  tick()
-  return () => clearInterval(tm)
 
-  function tick () {
-    const secs = Math.max(0, Math.floor((+$task.value.due - Date.now()) / 1000))
-    if (!secs) clearInterval(tm)
-    $dueSecs.value = secs
-  }
+  const tmDue = new Timer({
+    at: $task.value.due,
+    fn: () => tmTick.cancel()
+  })
+
+  const tmTick = new Timer({
+    every: 1000,
+    fn: () => {
+      $dueSecs.value = Math.floor(tmDue.left() / 1000)
+    }
+  }).fire()
+
+  return () => tmDue.fire() // cancels both
 })
 
 //

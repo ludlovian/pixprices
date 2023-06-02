@@ -1,17 +1,9 @@
-import config from './config.mjs'
 import { dateFormatter } from './util.mjs'
 const fmtTime = dateFormatter('{HH}:{mm} on {DDD} {D} {MMM}')
 
-let id = 0
-const iterTasks = makeAllTasks(config.jobs)
+export function * getAllTasks (jobs) {
+  let id = 0
 
-export function nextTask () {
-  const task = iterTasks.next().value
-  id++
-  return { id, ...task }
-}
-
-function * makeAllTasks (jobs) {
   const iters = jobs.map(job => makeJobTasks(job))
   const heads = iters.map(iter => iter.next().value)
   while (true) {
@@ -19,7 +11,8 @@ function * makeAllTasks (jobs) {
       (e, { due }, ix) => (!e.due || due < e.due ? { due, ix } : e),
       {}
     ).ix
-    yield heads[ix]
+    id++
+    yield { id, ...heads[ix] }
     heads[ix] = iters[ix].next().value
   }
 }

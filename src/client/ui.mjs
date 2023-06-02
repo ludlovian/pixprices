@@ -1,4 +1,5 @@
-import { h, html } from './imports.mjs'
+import { h, html } from 'htm/preact'
+
 import { fmtLongDate } from './util.mjs'
 import {
   isWorker,

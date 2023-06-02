@@ -11,12 +11,17 @@ export function cors (req, res, next) {
   const { origin } = req.headers
   // not cross-origin
   if (!origin || origin === config.server.origin) return next()
+  // GET & HEAD have blanket approval
+  if (['GET', 'HEAD'].includes(req.method)) {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    return next()
+  }
   // not a permitted origin
   if (!config.client.allowedOrigins.includes(origin)) {
-    res.writeHead(403).end()
+    return res.writeHead(403).end()
   }
   res.setHeader('Access-Control-Allow-Origin', origin)
-  // not a preflight (ie a real GET or POST)
+  // not a preflight (ie a real POST)
   if (req.method !== 'OPTIONS') return next()
   // Handle preflights ourselves
   res
