@@ -1,99 +1,95 @@
 import { parse as parseQS } from 'node:querystring'
 
-import { effect } from '@preact/signals-core'
-import send from '@polka/send-type'
-
-import equal from 'pixutil/equal'
+import Debug from 'debug'
 import { serialize, deserialize } from 'pixutil/json'
-import Bouncer from 'bouncer'
 
-import { $state, actions } from './model.mjs'
+import model from './model/index.mjs'
 import { updatePriceSheet } from './sheet.mjs'
-import config from './config.mjs'
+import { isDev } from './config.mjs'
+
+const debug = Debug('pixprices:server')
 
 export function getState (req, res) {
-  send(res, 200, serialize($state.value))
+  debug('getState')
+  const s = JSON.stringify(serialize(model.state))
+  res
+    .writeHead(200, {
+      'Content-Type': 'application/json;charset=utf-8',
+      'Content-Length': Buffer.byteLength(s)
+    })
+    .end(s)
 }
 
 export function getInjectState (req, res) {
-  const { id, url, status } = $state.value.task
-  const { isTest } = config
-  const state = { id, url, status, isTest }
-  send(res, 200, serialize(state))
+  debug('getInjectState')
+  const { id, url, status } = model.task
+  const s = JSON.stringify(serialize({ id, url, status, isDev }))
+  res
+    .writeHead(200, {
+      'Content-Type': 'application/json;charset=utf-8',
+      'Content-Length': Buffer.byteLength(s)
+    })
+    .end(s)
 }
 
 export function getStateStream (req, res) {
-  const role = req.search ? parseQS(req.search.slice(1)).role : undefined
-  const prev = {}
-
-  const removeClient = actions.addClient(role)
-
+  debug('getStateStream')
+  let role = 'watcher'
+  const { search } = req
+  if (search && parseQS(search.slice(1)).role === 'worker') role = 'worker'
   res.writeHead(200, {
     'Cache-Control': 'no-cache',
     Connection: 'keep-alive',
     'Content-Type': 'text/event-stream'
   })
 
-  // The bouncer is used to throttle the server side events to one
-  // every 250ms
-  const bouncer = new Bouncer({ every: 250, fn: sendNewState })
-
-  const unsub = effect(() => {
-    // we don't actually use $state here, but we reference it
-    // to ensure it gets called when the signal changes
-    bouncer.fire($state.value)
-  })
-
-  req.on('close', () => {
-    bouncer.stop()
-    unsub()
-    removeClient()
-  })
-
-  function sendNewState () {
-    const curr = $state.value
-    const diff = {}
-    for (const k in curr) {
-      if (!equal(curr[k], prev[k])) diff[k] = prev[k] = curr[k]
-    }
-    if (Object.keys(diff) === 0) return // no difference, so no send
+  const cancel = model.listen(role, diff => {
     const data = JSON.stringify(serialize(diff))
     res.write(`data: ${data}\n\n`)
-  }
+  })
+
+  req.on('close', cancel)
 }
 
 export function requestTask (req, res) {
+  debug('requestTask %o', req.params)
   const id = toNumber(req.params.id)
-  if (id !== $state.value.task.id) return res.writeHead(404).end()
+  if (id !== model.task.id) return res.writeHead(404).end()
 
-  actions.startTask(req, res)
+  model.task.start()
+
+  res
+    .writeHead(302, {
+      Location: model.task.url,
+      'Content-Length': 0
+    })
+    .end()
 }
 
 export async function postPrices (req, res) {
   const id = toNumber(req.params.id)
-  if (id !== $state.value.task.id) return res.writeHead(404).end()
+  if (id !== model.task.id) return res.writeHead(404).end()
+  debug('postPrices')
 
   let statusCode = 200
   let retData
 
   try {
     const prices = deserialize(req.json)
-    const source = $state.value.task.job
+    const source = model.task.job
 
     await updatePriceSheet({ source: `lse:${source}`, prices })
 
     const message = `${prices.length} prices from ${source}`
-    actions.completeTask(message)
-
+    model.task.complete(message)
     retData = { message, ok: true }
   } catch (err) {
-    console.log(err)
-
+    debug('Failed: %O', err)
     const { message } = err
     retData = { message, ok: false }
     statusCode = 503
 
-    actions.failTask(message)
+    model.task.fail(message)
   }
 
   const s = JSON.stringify(serialize(retData))

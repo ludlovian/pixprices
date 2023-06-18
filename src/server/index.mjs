@@ -1,45 +1,50 @@
 import { createServer } from 'node:https'
 
 import polka from 'polka'
-import sirv from 'sirv'
+import Debug from 'debug'
 
-import config from './config.mjs'
-import { cors, log, parseBody } from './wares.mjs'
-import * as handlers from './handlers.mjs'
+import { serverSSL, clientPath, serverPort } from './config.mjs'
+import { staticFiles, cors, log, parseBody } from './wares.mjs'
+import {
+  getInjectState,
+  getState,
+  getStateStream,
+  requestTask,
+  postPrices
+} from './handlers.mjs'
 
 class Server {
   static get instance () {
-    if (this._instance) return this._instance
-    this._instance = new Server()
-    return this._instance
+    return (this._instance = this._instance || new Server())
   }
 
+  debug = Debug('pixprices:server')
+
   start () {
-    const server = createServer(config.server.ssl)
+    const server = createServer(serverSSL)
     const app = (this.polka = polka({ server }))
 
     // middleware
     app
-      .use(log)
-      .use(cors) // handle CORS
-      .use(sirv('src/client', { dev: config.isTest })) // static files
-      .use(parseBody) // gather JSON bodies
+      .use(cors)
+      .use(staticFiles(clientPath))
+      .use(log, parseBody({ json: true }))
 
       // routes
-      .get('/status/inject', handlers.getInjectState)
-      .get('/status/state', handlers.getState)
-      .get('/status/updates', handlers.getStateStream)
-      .get('/task/:id', handlers.requestTask)
-      .post('/task/:id', handlers.postPrices)
+      .get('/api/status/inject', getInjectState)
+      .get('/api/status/state', getState)
+      .get('/api/status/updates', getStateStream)
+      .get('/api/task/:id', requestTask)
+      .post('/api/task/:id', postPrices)
 
     return new Promise((resolve, reject) => {
-      app.server.on('error', reject)
-      app.listen(config.server.port, '0.0.0.0', resolve)
-    }).then(() => {
-      console.log(`Listening on port ${config.server.port}`)
+      server.on('error', reject)
+      app.listen(serverPort, '0.0.0.0', () => {
+        this.debug('Listening on port %d', serverPort)
+        resolve()
+      })
     })
   }
 }
 
-const server = Server.instance
-export { server }
+export const server = Server.instance

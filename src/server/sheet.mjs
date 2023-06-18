@@ -1,13 +1,15 @@
+import Debug from 'debug'
 import * as sheets from 'googlejs/sheets'
 
 import createSerial from 'pixutil/serial'
 
-import config from './config.mjs'
+import { priceStore } from './config.mjs'
 
+const debug = Debug('pixprices:sheets')
 const serial = createSerial()
 
 async function loadPrices () {
-  const { id, range, credentials } = config.prices
+  const { id, range, credentials } = priceStore
 
   const data = await sheets.getRange({
     sheet: id,
@@ -28,7 +30,7 @@ async function loadPrices () {
 }
 
 async function writePrices (priceMap, prevSize = 0) {
-  const { id, range, credentials } = config.prices
+  const { id, range, credentials } = priceStore
 
   const data = Array.from(priceMap.keys())
     .sort()
@@ -63,10 +65,6 @@ function pruneOldPrices (priceMap, pruneAfter) {
 
 export function updatePriceSheet ({ source, prices }) {
   return serial.exec(async () => {
-    // if (config.isTest) {
-    //   log(`TEST: received ${prices.length} prices from ${source}`)
-    //   return
-    // }
     const updated = new Date()
 
     const priceMap = await loadPrices()
@@ -76,8 +74,9 @@ export function updatePriceSheet ({ source, prices }) {
       priceMap.set(ticker, { ticker, name, price, source, updated })
     }
 
-    pruneOldPrices(priceMap, config.prices.pruneAfter)
+    pruneOldPrices(priceMap, priceStore.pruneAfter)
 
     await writePrices(priceMap, prevSize)
+    debug('%d prices written from %s', prices.length, source)
   })
 }

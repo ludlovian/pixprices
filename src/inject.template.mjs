@@ -3,7 +3,9 @@
   const { location } = window
   console.log('PixPrices js injected.')
 
-  const state = await fetch(`${server}/status/inject`).then(res => res.json())
+  const state = await fetch(`${server}/api/status/inject`).then(res =>
+    res.json()
+  )
 
   if (location.href !== state.url) {
     console.log(`Not on ${state.url}\nSkipping.`)
@@ -92,7 +94,7 @@
 
   async function postPrices (prices) {
     const { id } = state
-    const url = `${server}/task/${id}`
+    const url = `${server}/api/task/${id}`
     const body = JSON.stringify(prices)
     const method = 'POST'
 

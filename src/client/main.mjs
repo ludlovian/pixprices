@@ -1,6 +1,9 @@
-import { render, html } from 'htm/preact'
+import { render, h } from 'preact'
+import htm from 'htm'
 
 import { Role, ServerStatus, NextTask, RecentTasks } from './ui.mjs'
+
+const html = htm.bind(h)
 
 render(
   html`

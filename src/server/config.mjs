@@ -1,52 +1,39 @@
-import { hostname } from 'node:os'
-import { argv } from 'node:process'
+import os from 'node:os'
 import { readFileSync } from 'node:fs'
 
-import { parse } from '@lukeed/ms'
+import { parse as parseMs } from '@lukeed/ms'
 
-const isTest = argv.includes('test')
+// are we running in dev or production
+export const isDev = process.env.NODE_ENV !== 'production'
 
-//
-// HTTPS server
-//
+// Where are the client files
+export const clientPath = isDev ? './src/client' : './dist/public'
 
-const server = (() => {
-  const host = `${hostname()}.pix.uk.to`
-  const port = 5234
-  const origin = `https://${host}:${port}`
-  const ssl = {
-    key: readFileSync(`creds/${host}.key`),
-    cert: readFileSync(`creds/${host}.crt`)
-  }
+// Name of the server
+export const hostname = os.hostname()
+export const fqdn = hostname + '.pix.uk.to'
 
-  return { origin, port, ssl }
-})()
-
-//
-// Browser clients
-//
-
-const client = {
-  allowedOrigins: ['https://www.lse.co.uk']
+// Settings for the HTTP server
+export const serverPort = 5234
+export const serverSSL = {
+  key: readFileSync(`creds/${fqdn}.key`),
+  cert: readFileSync(`creds/${fqdn}.crt`)
 }
 
-//
-// task handling
-//
+// Server origin
+export const origin = `https://${hostname}.pix.uk.to:${serverPort}`
 
-const task = {
-  historyLength: 20,
-  timeout: parse('5m')
-}
+// Client settings
+export const allowedOrigins = ['https://www.lse.co.uk']
 
-//
-// jobs
-//
+// Task settings
 
-const jobs = (() => {
+export const taskHistoryLength = 20
+export const taskTimeout = parseMs('5m')
+export const taskLookback = parseMs('1d')
+export const jobs = (() => {
   const lseUrl = name =>
-    ['https://www.lse.co.uk/share-prices/', name, '/constituents.html'].join('')
-
+    'https://www.lse.co.uk/share-prices/' + name + '/constituents.html'
   return [
     {
       job: 'AllShare',
@@ -66,23 +53,11 @@ const jobs = (() => {
   ]
 })()
 
-//
-// prices spreadsheet
-//
+// Price store
 
-const prices = (() => {
-  const tab = isTest ? 'Test' : 'Prices'
-
-  return {
-    id: '1UdNhJNLWriEJtAJdbxwswGTl8CBcDK1nkEmJvwbc_5c',
-    range: rows => `${tab}!A2:E${rows ? rows + 1 : ''}`,
-    credentials: 'creds/credentials.json',
-    pruneAfter: parse('7d')
-  }
-})()
-
-//
-// Exports
-//
-
-export default { isTest, server, client, task, jobs, prices }
+export const priceStore = {
+  id: '1UdNhJNLWriEJtAJdbxwswGTl8CBcDK1nkEmJvwbc_5c',
+  range: rows => `${isDev ? 'Test' : 'Prices'}!A2:E${rows ? rows + 1 : ''}`,
+  credentials: 'creds/credentials.json',
+  pruneAfter: parseMs('7d')
+}

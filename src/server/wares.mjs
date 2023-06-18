@@ -1,29 +1,30 @@
-import { dateFormatter } from './util.mjs'
-import config from './config.mjs'
+import sirv from 'sirv'
 
-const fmtDate = dateFormatter('{DDD} {D} {MMM} {HH}:{MM}')
+import Debug from 'debug'
 
-//
-// Add CORS headers for permitted cross-origin requests
-//
+import { origin as serverOrigin, allowedOrigins, isDev } from './config.mjs'
+
+const logger = Debug('pixprices*')
+
+export const staticFiles = path =>
+  sirv(path, {
+    dev: isDev,
+    gzip: !isDev,
+    etag: !isDev
+  })
 
 export function cors (req, res, next) {
   const { origin } = req.headers
-  // not cross-origin
-  if (!origin || origin === config.server.origin) return next()
-  // GET & HEAD have blanket approval
+  if (!origin || origin === serverOrigin) return next()
   if (['GET', 'HEAD'].includes(req.method)) {
     res.setHeader('Access-Control-Allow-Origin', '*')
     return next()
   }
-  // not a permitted origin
-  if (!config.client.allowedOrigins.includes(origin)) {
+  if (!allowedOrigins.includes(origin)) {
     return res.writeHead(403).end()
   }
   res.setHeader('Access-Control-Allow-Origin', origin)
-  // not a preflight (ie a real POST)
   if (req.method !== 'OPTIONS') return next()
-  // Handle preflights ourselves
   res
     .writeHead(200, {
       'Access-Control-Allow-Methods': 'GET,POST',
@@ -32,45 +33,39 @@ export function cors (req, res, next) {
     .end()
 }
 
-//
-// Write server log to console
-//
-
 export function log (req, res, next) {
-  const when = fmtDate()
-  const { method, path } = req
-
-  res.once('finish', () => {
-    const { statusCode } = res
-    // don't bother logging the boring normal stuff
-    if (!config.isTest && isNormal({ statusCode, method })) return
-    console.log([when, method, path, statusCode].join(' - '))
-  })
+  res.once('finish', () => log.writeLine(req, res))
   next()
-
-  function isNormal ({ statusCode, method }) {
-    return statusCode === 200 && ['GET', 'OPTIONS', 'HEAD'].includes(method)
-  }
 }
 
-//
-// Parse any JSON body
-//
+log.writeLine = function (req, res) {
+  const { statusCode } = res
+  const { method, path } = req
+  const s = [method, path, statusCode].filter(Boolean).join(' - ')
+  logger(s)
+}
 
-export async function parseBody (req, res, next) {
-  if (req._body) return next()
-  if (req.method !== 'POST') return next()
-  let body = ''
-  req.setEncoding('utf-8')
-  try {
-    for await (const chunk of req) {
-      body += chunk
+export function parseBody (opts = {}) {
+  const { json = false, methods = ['POST'] } = opts
+  return async (req, res, next) => {
+    if (!methods.includes(req.method) || req._bodyParsed) return next()
+
+    req.setEncoding('utf-8')
+    let body = ''
+    for await (const chunk of req) body += chunk
+    if (body) req.body = body
+    req._bodyParsed = true
+
+    if (json) {
+      req.json = {}
+      if (body) {
+        try {
+          req.json = JSON.parse(body)
+        } catch (e) {
+          next(e)
+        }
+      }
     }
-    req.body = body
-    req.json = JSON.parse(body)
-  } catch (err) {
-    return next(err)
+    next()
   }
-  req._body = true
-  next()
 }

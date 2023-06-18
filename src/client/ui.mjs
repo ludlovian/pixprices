@@ -1,17 +1,13 @@
-import { h, html } from 'htm/preact'
+import { h } from 'preact'
+import htm from 'htm'
 
 import { fmtLongDate } from './util.mjs'
-import {
-  isWorker,
-  $server,
-  $task,
-  $recent,
-  $fmtSecs,
-  $serverUptime
-} from './model.mjs'
+import model from './model/index.mjs'
+
+const html = htm.bind(h)
 
 export function Role () {
-  if (!isWorker) return
+  if (!model.isWorker) return
   return html`
     <div class="row">
       <span class="text fs-3 text-primary">Worker</span>
@@ -22,9 +18,9 @@ export function Role () {
 
 export function ServerStatus () {
   const details = [
-    `Started ${$serverUptime.value}`,
-    `Workers: ${$server.value.workers}`,
-    `Watchers: ${$server.value.watchers}`
+    `Started ${model.uptime}`,
+    `Workers: ${model.server.workers}`,
+    `Watchers: ${model.server.watchers}`
   ].map(el => h('div', { class: 'text' }, el))
   return html`
     <h4>Server Status</h4>
@@ -33,13 +29,13 @@ export function ServerStatus () {
 }
 
 export function NextTask () {
-  if (!$task.value.id) return
+  if (!model.current.id) return
   return html`
     <h4>Next Task</h4>
     <div class="row">
       <span class="text my-2">
-        <${TaskName} ...${$task.value} />
-        <span> due in ${$fmtSecs}</span>
+        <${TaskName} ...${model.current} />
+        <span> due in ${model.remaining}</span>
       </span>
     </div>
   `
@@ -67,7 +63,7 @@ function TaskName ({ id, status, name }) {
 }
 
 export function RecentTasks () {
-  const items = $recent.value.map(t => h(RecentTask, t))
+  const items = model.recent.map(t => h(RecentTask, t))
   return html`
     <h4>History</h4>
     <div class="accordion" id="recentTasks">${items}</div>
