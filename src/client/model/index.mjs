@@ -64,7 +64,7 @@ class Model {
 
   _monitor () {
     const task = this.current
-    if (task.status === 'due') {
+    if (task.status === 'due' && this.isWorker) {
       const { id } = task
       window.location.assign(`/api/task/${id}`)
     }
