@@ -5,7 +5,7 @@ import sortBy from 'sortby'
 import Timer from 'timer'
 
 import { dateFormatter, dateFromDayAndTime, advanceOneDay } from './util.mjs'
-import { addSignals } from './signal-extra.mjs'
+import { addSignals, until } from './signal-extra.mjs'
 import {
   jobs,
   taskHistoryLength,
@@ -13,14 +13,6 @@ import {
   taskLookback,
   isDev
 } from '../config.mjs'
-
-const fmtTime = dateFormatter('{HH}:{mm} on {DDD} {D} {MMM}')
-
-const WAIT = 'wait'
-const DUE = 'due'
-const START = 'start'
-const DONE = 'done'
-const ERROR = 'error'
 
 class Tasks {
   static get instance () {
@@ -41,9 +33,10 @@ class Tasks {
 
     this._lastID = 0
     this.jobs = jobs.map(spec => new Job(spec))
-    this.next()
 
-    effect(() => this._monitor())
+    effect(() => {
+      if (!this.current || this.current.isFinished) this.next()
+    })
   }
 
   next () {
@@ -55,30 +48,10 @@ class Tasks {
       const task = job.current
       job.next()
       task.id = ++this._lastID
-      task.status = WAIT
+      task.lifecycle()
       this.current = task
       this.debug('Task #%d added - %s', task.id, task.name)
     })
-  }
-
-  _monitor () {
-    if (!this.current) return
-    const task = this.current
-    if (task.status === WAIT) {
-      const tm = new Timer({
-        at: task.due,
-        fn: () => (task.status = DUE)
-      })
-      return () => tm.cancel()
-    } else if (task.status === START) {
-      const tm = new Timer({
-        after: taskTimeout,
-        fn: () => task.fail('Timed out')
-      })
-      return () => tm.cancel()
-    } else if (task.status === DONE || task.status === ERROR) {
-      this.next()
-    }
   }
 }
 
@@ -113,16 +86,32 @@ class Job {
 }
 
 class Task {
+  static fmtTime = dateFormatter('{HH}:{mm} on {DDD} {D} {MMM}')
+  static STAGES = ['', 'wait', 'due', 'start', 'done', 'error']
+  static WAIT = 1
+  static DUE = 2
+  static START = 3
+  static DONE = 4
+  static ERROR = 5
+
   debug = Debug('pixprices:task')
 
   constructor (data) {
     addSignals(this, {
+      // core
       id: 0,
       job: '',
       due: undefined,
-      name: () => this._name(),
-      status: '',
+      stage: 0,
+      url: '',
       activity: [],
+
+      // derived
+      status: () => Task.STAGES[this.stage],
+      name: () => this._name(),
+      isDue: () => this.stage >= Task.DUE,
+      isStarted: () => this.stage >= Task.START,
+      isFinished: () => this.stage >= Task.DONE,
       state: () => ({
         id: this.id,
         job: this.job,
@@ -137,27 +126,42 @@ class Task {
   }
 
   _name () {
-    return this.due ? `${this.job} @ ${fmtTime(this.due)}` : ''
+    return this.due ? `${this.job} @ ${Task.fmtTime(this.due)}` : ''
+  }
+
+  async lifecycle () {
+    const tm = new Timer()
+    this.stage = Task.WAIT
+    tm.set({ at: this.due, fn: () => (this.stage = Task.DUE) })
+
+    await until(() => this.isDue)
+    tm.cancel()
+
+    await until(() => this.isStarted)
+    tm.set({ after: taskTimeout, fn: () => this.fail('Timed out') })
+
+    await until(() => this.isFinished)
+    tm.cancel()
   }
 
   start () {
     this.debug('Task #%d started', this.id)
-    this._update(START, 'Started')
+    this._update(Task.START, 'Started')
   }
 
   complete (msg) {
     this.debug('Task #%d completed: %s', this.id, msg)
-    this._update(DONE, msg)
+    this._update(Task.DONE, msg)
   }
 
   fail (msg) {
     this.debug('Task #%d failed: %s', this.id, msg)
-    this._update(ERROR, msg)
+    this._update(Task.ERROR, msg)
   }
 
-  _update (status, message) {
+  _update (stage, message) {
     batch(() => {
-      this.status = status
+      this.stage = stage
       this.activity = [...this.activity, { when: new Date(), message }]
     })
   }
