@@ -1,72 +1,76 @@
-import { effect } from '@preact/signals'
+import { effect, batch } from '@preact/signals'
 import fromNow from 'fromnow'
 import { deserialize } from 'pixutil/json'
 import Timer from 'timer'
+import sortBy from 'sortby'
 
+import Task from './task.mjs'
 import { addSignals } from './signal-extra.mjs'
-import { getQuery, fmtDuration } from '../util.mjs'
+import { getQuery } from '../util.mjs'
+
+const { fromEntries, entries, assign } = Object
 
 class Model {
   constructor () {
     addSignals(this, {
-      server: {},
-      current: {},
-      recent: [],
-      dueMs: 0,
-      serverUptimeMs: 0,
+      // from server
+      started: '',
+      watchers: 0,
+      workers: 0,
+      oldest: 0,
+      current: 0,
+      tasks: [],
+
+      // local
+      uptimeMs: 0,
       role: getQuery().role || 'watcher',
-      isWorker: () => this.role === 'worker',
-      remaining: () => fmtDuration((this.dueMs / 1000) | 0),
-      isDue: () => this.current.status === 'due',
-      uptime: () =>
-        fromNow(this.server.started, { suffix: true }, this.serverUptimeMs)
+
+      // derived
+      byID: () => fromEntries(this.tasks.map(t => [t.id, t])),
+      task: () => this.byID[this.current],
+      recent: () => this.tasks.filter(t => t.id !== this.current),
+      uptime: () => fromNow(this.started, { suffix: true }, this.uptimeMs),
+      isWorker: () => this.role === 'worker'
     })
 
     this.start()
   }
 
+  _onData (data) {
+    batch(() => {
+      const { server = {}, tasks = {} } = data
+      assign(this, server)
+      for (const [id, value] of entries(tasks)) {
+        if (this.byID[id]) {
+          assign(this.byID[id], value)
+        } else {
+          const task = new Task(value)
+          this.tasks = [...this.tasks, task]
+            .filter(t => t.id >= this.oldest)
+            .sort(sortBy(t => t.id, true))
+        }
+      }
+    })
+  }
+
   start () {
     const es = new window.EventSource(`/api/status/updates?role=${this.role}`)
-    es.onmessage = ({ data }) => {
-      data = deserialize(JSON.parse(data))
-      Object.assign(this, data)
-    }
+    es.onmessage = ({ data }) => this._onData(deserialize(JSON.parse(data)))
 
-    effect(this._tickDue.bind(this))
     effect(this._tickUptime.bind(this))
     effect(this._monitor.bind(this))
   }
 
-  _tickDue () {
-    const task = this.current
-    if (task.status !== 'wait') {
-      this.dueMs = 0
-      return
-    }
-    const tm = new Timer({
-      every: 1000,
-      fn: () => {
-        const ms = Math.max(+task.due - Date.now(), 0)
-        if (ms === 0) tm.cancel()
-        this.dueMs = ms
-      }
-    })
-    return () => tm.cancel()
-  }
-
   _tickUptime () {
-    const tm = new Timer({
-      every: 10 * 1000,
-      fn: () => (this.serverUptimeMs = Date.now() - this.server.started)
-    })
+    const tm = Timer.every(10e3)
+      .call(() => (this.uptimeMs = Date.now() - this.started))
+      .fire()
     return () => tm.cancel()
   }
 
   _monitor () {
-    const task = this.current
-    if (task.status === 'due' && this.isWorker) {
-      const { id } = task
-      window.location.assign(`/api/task/${id}`)
+    if (this.isWorker && this.task.isDue) {
+      window.location.assign(`/api/task/${this.task.id}`)
     }
   }
 }

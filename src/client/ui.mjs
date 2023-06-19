@@ -19,8 +19,8 @@ export function Role () {
 export function ServerStatus () {
   const details = [
     `Started ${model.uptime}`,
-    `Workers: ${model.server.workers}`,
-    `Watchers: ${model.server.watchers}`
+    `Workers: ${model.workers}`,
+    `Watchers: ${model.watchers}`
   ].map(el => h('div', { class: 'text' }, el))
   return html`
     <h4>Server Status</h4>
@@ -29,13 +29,13 @@ export function ServerStatus () {
 }
 
 export function NextTask () {
-  if (!model.current.id) return
+  if (!model.task) return
   return html`
     <h4>Next Task</h4>
     <div class="row">
       <span class="text my-2">
-        <${TaskName} ...${model.current} />
-        <span> due in ${model.remaining}</span>
+        <${TaskName} task=${model.task} />
+        <span> due in ${model.task.remaining}</span>
       </span>
     </div>
   `
@@ -51,59 +51,58 @@ const STATUS_CLASS = {
 
 //
 // Task id & name
-function TaskName ({ id, status, name }) {
-  const a1 = {
-    class: ['badge', 'rounded-pill', 'mx-1', STATUS_CLASS[status]].join(' ')
-  }
+function TaskName ({ task }) {
+  const cls = STATUS_CLASS[task.status]
+  const a1 = { class: 'badge rounded-pill mx-1 ' + cls }
   const a2 = { class: 'text mx-1' }
   return html`
-    <span ...${a1}>${id}</span>
-    <span ...${a2}>${name}</span>
+    <span ...${a1}>${task.id}</span>
+    <span ...${a2}>${task.name}</span>
   `
 }
 
 export function RecentTasks () {
-  const items = model.recent.map(t => h(RecentTask, t))
+  const items = model.recent.map(task => h(RecentTask, { task }))
   return html`
     <h4>History</h4>
     <div class="accordion" id="recentTasks">${items}</div>
   `
 }
 
-function RecentTask ({ id, name, status, activity }) {
+function RecentTask ({ task }) {
   const attr = {
     class: 'accordion-item',
-    key: id
+    key: task.id
   }
   return html`
     <div ...${attr}>
-      <${TaskHeader} ...${{ id, name, status }} />
-      <${TaskActivity} ...${{ id, activity }} />
+      <${TaskHeader} task=${task} />
+      <${TaskActivity} task=${task} />
     </div>
   `
 }
 
-function TaskHeader ({ id, name, status }) {
+function TaskHeader ({ task }) {
   const a1 = { class: 'accordion-header' }
   const a2 = {
     class: 'accordion-button collapsed',
     type: 'button',
     'data-bs-toggle': 'collapse',
-    'data-bs-target': `#activityDetail-${id}`
+    'data-bs-target': `#activityDetail-${task.id}`
   }
   return html`
     <h4 ...${a1}>
       <button ...${a2}>
-        <${TaskName} ...${{ id, status, name }} />
+        <${TaskName} task=${task} />
       </button>
     </h4>
   `
 }
 
-function TaskActivity ({ id, activity }) {
-  const items = activity.map(a => h(ActivityLine, a))
+function TaskActivity ({ task }) {
+  const items = task.activity.map(a => h(ActivityLine, a))
   const a1 = {
-    id: `activityDetail-${id}`,
+    id: `activityDetail-${task.id}`,
     class: 'accordion-collapse collapse',
     'data-bs-parent': '#recentTasks'
   }

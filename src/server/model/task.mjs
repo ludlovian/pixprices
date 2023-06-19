@@ -1,91 +1,13 @@
-import { effect, batch } from '@preact/signals-core'
+import { batch } from '@preact/signals-core'
 
 import Debug from 'debug'
-import sortBy from 'sortby'
 import Timer from 'timer'
 
-import { dateFormatter, dateFromDayAndTime, advanceOneDay } from './util.mjs'
+import { dateFormatter } from './util.mjs'
 import { addSignals, until } from './signal-extra.mjs'
-import {
-  jobs,
-  taskHistoryLength,
-  taskTimeout,
-  taskLookback,
-  isDev
-} from '../config.mjs'
+import { taskTimeout } from '../config.mjs'
 
-class Tasks {
-  static get instance () {
-    return (this._instance = this._instance || new Tasks())
-  }
-
-  debug = Debug('pixprices:task')
-
-  constructor () {
-    addSignals(this, {
-      current: undefined,
-      recent: [],
-      state: () => ({
-        current: this.current.state,
-        recent: this.recent.map(t => t.state)
-      })
-    })
-
-    this._lastID = 0
-    this.jobs = jobs.map(spec => new Job(spec))
-
-    effect(() => {
-      if (!this.current || this.current.isFinished) this.next()
-    })
-  }
-
-  next () {
-    batch(() => {
-      this.recent = [this.current, ...this.recent]
-        .filter(Boolean)
-        .slice(0, taskHistoryLength)
-      const job = this.jobs.sort(sortBy(j => j.current.due))[0]
-      const task = job.current
-      job.next()
-      task.id = ++this._lastID
-      task.lifecycle()
-      this.current = task
-      this.debug('Task #%d added - %s', task.id, task.name)
-    })
-  }
-}
-
-class Job {
-  constructor (spec) {
-    this.spec = spec
-    this.next()
-  }
-
-  * _stream () {
-    const now = new Date()
-    const { times } = this.spec
-    const dates = times.sort().map(tm => dateFromDayAndTime(now, tm))
-    while (true) {
-      for (const [ix, date] of dates.entries()) {
-        if (date > now) yield date
-        dates[ix] = advanceOneDay(date)
-      }
-    }
-  }
-
-  next () {
-    if (!this._iter) this._iter = this._stream()
-    const now = Date.now()
-    let due
-    while (true) {
-      due = this._iter.next().value
-      if (+due >= now - taskLookback) break
-    }
-    this.current = new Task({ ...this.spec, due })
-  }
-}
-
-class Task {
+export default class Task {
   static fmtTime = dateFormatter('{HH}:{mm} on {DDD} {D} {MMM}')
   static STAGES = ['', 'wait', 'due', 'start', 'done', 'error']
   static WAIT = 1
@@ -166,6 +88,3 @@ class Task {
     })
   }
 }
-
-if (isDev) global.tasks = Tasks.instance
-export default Tasks.instance

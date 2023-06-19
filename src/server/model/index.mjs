@@ -1,9 +1,13 @@
+import { effect, batch } from '@preact/signals-core'
 import Debug from 'debug'
+import sortBy from 'sortby'
 
 import { subscribe } from './subscribe.mjs'
-import tasks from './task.mjs'
+import jobs from './jobs.mjs'
 import { addSignals } from './signal-extra.mjs'
-import { isDev } from '../config.mjs'
+import { isDev, taskHistoryLength } from '../config.mjs'
+
+const { fromEntries } = Object
 
 class Model {
   started = new Date()
@@ -11,33 +15,52 @@ class Model {
 
   constructor () {
     addSignals(this, {
-      watchers: 0,
-      workers: 0,
-      task: () => tasks.current,
+      // core data
+      watcherCount: 0,
+      workerCount: 0,
+      tasks: [],
+      // derived
+      currentID: () => Math.max(...this.tasks.map(t => t.id)),
+      oldestID: () => Math.min(...this.tasks.map(t => t.id)),
+      byID: () => fromEntries(this.tasks.map(t => [t.id, t])),
+      task: () => this.byID[this.currentID],
       state: () => ({
         server: {
           started: this.started,
-          watchers: this.watchers,
-          workers: this.workers
+          watchers: this.watcherCount,
+          workers: this.workerCount,
+          oldest: this.oldestID,
+          current: this.currentID
         },
-        ...tasks.state
+        tasks: fromEntries(this.tasks.map(t => [t.id, t.state]))
       })
     })
-    this.tasks = tasks
+
+    effect(() => {
+      if (!this.task || this.task.isFinished) this.addTask()
+    })
+  }
+
+  addTask () {
+    batch(() => {
+      const task = jobs.nextTask()
+      this.tasks = [...this.tasks, task]
+        .sort(sortBy('id'))
+        .slice(-taskHistoryLength)
+    })
   }
 
   listen (role, callback) {
+    if (role !== 'worker') role = 'watcher'
     this.debug('New %s listening', role)
-    if (role === 'worker') this.workers++
-    else this.watchers++
+    this[role + 'Count']++
 
     const unsub = subscribe(() => this.state, callback)
 
     return () => {
       this.debug('%s stopped listening', role)
       unsub()
-      if (role === 'worker') this.workers--
-      else this.watchers--
+      this[role + 'Count']--
     }
   }
 }

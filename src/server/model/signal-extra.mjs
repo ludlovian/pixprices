@@ -23,6 +23,7 @@ export function addSignals (target, signalProps) {
 // resolves once a reactive function returns truthy
 export function until (fn, timeout) {
   return new Promise(resolve => {
+    if (fn()) return true
     const tm = timeout ? setTimeout(() => stop(false), timeout) : null
     const dispose = effect(() => fn() && stop(true))
     function stop (result) {
