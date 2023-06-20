@@ -1,6 +1,6 @@
 import { parse as parseQS } from 'node:querystring'
 
-import Debug from 'debug'
+import Debug from '@ludlovian/debug'
 import { serialize, deserialize } from 'pixutil/json'
 
 import model from './model/index.mjs'

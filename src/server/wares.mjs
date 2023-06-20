@@ -1,6 +1,6 @@
 import sirv from 'sirv'
 
-import Debug from 'debug'
+import Debug from '@ludlovian/debug'
 
 import { origin as serverOrigin, allowedOrigins, isDev } from './config.mjs'
 

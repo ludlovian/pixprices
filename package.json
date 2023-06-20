@@ -10,8 +10,9 @@
     "clean": "rm -rf dist/",
     "format": "prettier-standard 'src/**/*.{mjs,js}'",
     "lint": "standard 'src/**/*.{mjs,js}' | snazzy",
-    "build": "rollup -c rollup.config.js",
-    "start:dev": "NODE_ENV=dev node src/index.mjs",
+    "build:dev": "rollup -c",
+    "build:prod": "NODE_ENV=production rollup -c",
+    "start:dev": "rollup -c -w",
     "start:prod": "NODE_ENV=production node dist/index.mjs"
   },
   "repository": {
@@ -21,10 +22,11 @@
   "author": "",
   "license": "Unlicense",
   "dependencies": {
+    "@googleapis/sheets": "^4.0.2",
+    "@ludlovian/debug": "github:ludlovian/debug",
     "@lukeed/ms": "^2.0.1",
     "@preact/signals-core": "^1.3.0",
     "bouncer": "github:ludlovian/bouncer",
-    "debug": "github:ludlovian/debug",
     "googlejs": "github:ludlovian/googlejs",
     "pixutil": "github:ludlovian/pixutil#semver:^1.7.2",
     "polka": "^0.5.2",
@@ -35,8 +37,9 @@
   },
   "devDependencies": {
     "@preact/signals": "^1.1.3",
-    "@rollup/plugin-commonjs": "^25.0.1",
+    "@rollup/plugin-commonjs": "^25.0.2",
     "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-run": "^3.0.1",
     "@rollup/plugin-terser": "^0.4.3",
     "fromnow": "^3.0.1",
     "htm": "^3.1.1",

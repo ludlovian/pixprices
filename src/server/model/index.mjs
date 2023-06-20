@@ -1,5 +1,5 @@
 import { effect, batch } from '@preact/signals-core'
-import Debug from 'debug'
+import Debug from '@ludlovian/debug'
 import sortBy from 'sortby'
 
 import { subscribe } from './subscribe.mjs'
@@ -30,7 +30,8 @@ class Model {
           watchers: this.watcherCount,
           workers: this.workerCount,
           oldest: this.oldestID,
-          current: this.currentID
+          current: this.currentID,
+          isDev
         },
         tasks: fromEntries(this.tasks.map(t => [t.id, t.state]))
       })

@@ -1,7 +1,7 @@
 import { createServer } from 'node:https'
 
 import polka from 'polka'
-import Debug from 'debug'
+import Debug from '@ludlovian/debug'
 
 import { serverSSL, clientPath, serverPort } from './config.mjs'
 import { staticFiles, cors, log, parseBody } from './wares.mjs'

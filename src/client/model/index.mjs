@@ -69,7 +69,7 @@ class Model {
   }
 
   _monitor () {
-    if (this.isWorker && this.task.isDue) {
+    if (this.isWorker && this.task && this.task?.isDue) {
       window.location.assign(`/api/task/${this.task.id}`)
     }
   }

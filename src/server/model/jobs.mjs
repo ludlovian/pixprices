@@ -1,4 +1,4 @@
-import Debug from 'debug'
+import Debug from '@ludlovian/debug'
 import sortBy from 'sortby'
 
 import { jobs as configJobs, taskLookback } from '../config.mjs'

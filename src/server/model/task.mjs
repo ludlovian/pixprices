@@ -1,6 +1,6 @@
 import { batch } from '@preact/signals-core'
 
-import Debug from 'debug'
+import Debug from '@ludlovian/debug'
 import Timer from 'timer'
 
 import { dateFormatter } from './util.mjs'

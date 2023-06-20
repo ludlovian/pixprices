@@ -7,7 +7,7 @@ import { parse as parseMs } from '@lukeed/ms'
 export const isDev = process.env.NODE_ENV !== 'production'
 
 // Where are the client files
-export const clientPath = isDev ? './src/client' : './dist/public'
+export const clientPath = './dist/public'
 
 // Name of the server
 export const hostname = os.hostname()

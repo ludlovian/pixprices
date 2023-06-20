@@ -1,4 +1,4 @@
-import Debug from 'debug'
+import Debug from '@ludlovian/debug'
 import * as sheets from 'googlejs/sheets'
 
 import createSerial from 'pixutil/serial'
