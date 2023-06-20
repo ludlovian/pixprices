@@ -2,7 +2,7 @@
   "name": "pixprices",
   "private": true,
   "type": "module",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Fetches prices",
   "main": "src/index.mjs",
   "module": "src/index.mjs",
