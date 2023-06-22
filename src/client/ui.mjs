@@ -6,8 +6,22 @@ import model from './model/index.mjs'
 
 const html = htm.bind(h)
 
-export function Role () {
-  if (!model.isWorker) return
+export function App () {
+  return html`
+    <div class="container">
+      <h3>Pix Prices status</h3>
+      <${Role} />
+      <${ServerStatus} />
+      <hr />
+      <${NextTask} />
+      <hr />
+      <${RecentTasks} />
+    </div>
+  `
+}
+
+function Role () {
+  if (!model.isWorker) return null
   return html`
     <div class="row">
       <span class="text fs-3 text-primary">Worker</span>
@@ -16,7 +30,7 @@ export function Role () {
   `
 }
 
-export function ServerStatus () {
+function ServerStatus () {
   const details = [
     `Started ${model.uptime}`,
     `Workers: ${model.workers}`,
@@ -28,8 +42,8 @@ export function ServerStatus () {
   `
 }
 
-export function NextTask () {
-  if (!model.task) return
+function NextTask () {
+  if (!model.task) return null
   return html`
     <h4>Next Task</h4>
     <div class="row">
@@ -61,7 +75,7 @@ function TaskName ({ task }) {
   `
 }
 
-export function RecentTasks () {
+function RecentTasks () {
   const items = model.recent.map(task => h(RecentTask, { task }))
   return html`
     <h4>History</h4>
