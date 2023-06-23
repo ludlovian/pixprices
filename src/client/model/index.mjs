@@ -32,8 +32,6 @@ class Model {
       uptime: () => fromNow(this.started, { suffix: true }, this.uptimeMs),
       isWorker: () => this.role === 'worker'
     })
-
-    this.start()
   }
 
   _onData (data) {
@@ -54,11 +52,18 @@ class Model {
   }
 
   start () {
-    const es = new window.EventSource(`/api/status/updates?role=${this.role}`)
-    es.onmessage = ({ data }) => this._onData(deserialize(JSON.parse(data)))
+    this.source = new window.EventSource(
+      `/api/status/updates?role=${this.role}`
+    )
+    this.source.onmessage = ({ data }) =>
+      this._onData(deserialize(JSON.parse(data)))
 
     effect(this._tickUptime.bind(this))
     effect(this._monitor.bind(this))
+  }
+
+  stop () {
+    this.source.close()
   }
 
   _tickUptime () {
@@ -70,6 +75,7 @@ class Model {
 
   _monitor () {
     if (this.isWorker && this.task && this.task?.isDue) {
+      this.stop()
       window.location.assign(`/api/task/${this.task.id}`)
     }
   }
