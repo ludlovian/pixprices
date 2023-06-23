@@ -13,7 +13,8 @@
     "build:dev": "rollup -c",
     "build:prod": "NODE_ENV=production rollup -c",
     "start:dev": "rollup -c -w",
-    "start:prod": "NODE_ENV=production node dist/index.mjs"
+    "start:prod": "NODE_ENV=production node dist/index.mjs",
+    "start": "node dist/index.mjs"
   },
   "repository": {
     "type": "git",

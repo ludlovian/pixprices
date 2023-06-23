@@ -1,0 +1,14 @@
+[Unit]
+Description=PixPrices server
+After=network.target
+
+[Service]
+User=alan
+WorkingDirectory=/home/alan/dev/pixprices
+Environment=NODE_ENV=production
+Environment=DEBUG=pixprices:*
+Environment=DEBUG_HIDE_DATE=1
+ExecStart=/usr/local/bin/npm run start
+
+[Install]
+WantedBy=multi-user.target
