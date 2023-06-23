@@ -7,14 +7,13 @@ import model from './model/index.mjs'
 const html = htm.bind(h)
 
 export function App () {
+  if (!model.version) return null
   return html`
     <div class="container">
       <h3>Pix Prices status</h3>
       <${Role} />
       <${ServerStatus} />
-      <hr />
       <${NextTask} />
-      <hr />
       <${RecentTasks} />
     </div>
   `
@@ -37,7 +36,10 @@ function ServerStatus () {
     `Watchers: ${model.watchers}`
   ].map(el => h('div', { class: 'text' }, el))
   return html`
-    <h4>Server Status</h4>
+    <p class="text">
+      <span class="h4">Server Status</span>
+      <small class="text mx-2">version ${model.version}</small>
+    </p>
     <div class="row">${details}</div>
   `
 }
@@ -45,11 +47,15 @@ function ServerStatus () {
 function NextTask () {
   if (!model.task) return null
   return html`
+    <hr />
     <h4>Next Task</h4>
     <div class="row">
       <span class="text my-2">
         <${TaskName} task=${model.task} />
-        <span> due in ${model.task.remaining}</span>
+        ${model.task.isWaiting &&
+          html`
+            <span> due in ${model.task.remaining}</span>
+          `}
       </span>
     </div>
   `
@@ -76,8 +82,11 @@ function TaskName ({ task }) {
 }
 
 function RecentTasks () {
-  const items = model.recent.map(task => h(RecentTask, { task }))
+  const { recent } = model
+  if (!recent.length) return null
+  const items = recent.map(task => h(RecentTask, { task }))
   return html`
+    <hr />
     <h4>History</h4>
     <div class="accordion" id="recentTasks">${items}</div>
   `

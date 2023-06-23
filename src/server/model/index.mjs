@@ -16,6 +16,7 @@ class Model {
   constructor () {
     addSignals(this, {
       // core data
+      version: process.env.npm_package_version || 'dev',
       watcherCount: 0,
       workerCount: 0,
       tasks: [],
@@ -26,6 +27,7 @@ class Model {
       task: () => this.byID[this.currentID],
       state: () => ({
         server: {
+          version: this.version,
           started: this.started,
           watchers: this.watcherCount,
           workers: this.workerCount,

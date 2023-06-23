@@ -14,6 +14,7 @@ class Model {
   constructor () {
     addSignals(this, {
       // from server
+      version: '',
       started: '',
       watchers: 0,
       workers: 0,
