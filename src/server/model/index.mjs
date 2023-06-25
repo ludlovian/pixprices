@@ -1,10 +1,10 @@
 import { effect, batch } from '@preact/signals-core'
 import Debug from '@ludlovian/debug'
 import sortBy from 'sortby'
+import addSignals from '@ludlovian/signal-extra/add-signals'
+import subscribe from '@ludlovian/signal-extra/subscribe'
 
-import { subscribe } from './subscribe.mjs'
 import jobs from './jobs.mjs'
-import { addSignals } from './signal-extra.mjs'
 import { isDev, taskHistoryLength } from '../config.mjs'
 
 const { fromEntries } = Object
@@ -20,6 +20,7 @@ class Model {
       watcherCount: 0,
       workerCount: 0,
       tasks: [],
+
       // derived
       currentID: () => Math.max(...this.tasks.map(t => t.id)),
       oldestID: () => Math.min(...this.tasks.map(t => t.id)),

@@ -1,8 +1,7 @@
 import { effect } from '@preact/signals'
-
+import addSignals from '@ludlovian/signal-extra/add-signals'
 import Timer from 'timer'
 
-import { addSignals } from './signal-extra.mjs'
 import { fmtDuration } from '../util.mjs'
 
 export default class Task {
@@ -25,7 +24,7 @@ export default class Task {
 
     Object.assign(this, data)
 
-    effect(this._setupTicker.bind(this))
+    effect(() => this._setupTicker())
   }
 
   _setupTicker () {
@@ -33,9 +32,8 @@ export default class Task {
       this.dueMs = 0
       return
     }
-    const tm = Timer.every(1e3).call(this._tick.bind(this))
-    tm.fire()
-    return tm.cancel.bind(tm)
+    const tm = new Timer({ every: 1e3, fn: () => this._tick() }).fire()
+    return () => tm.cancel()
   }
 
   _tick () {

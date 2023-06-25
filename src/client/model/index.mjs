@@ -3,9 +3,9 @@ import fromNow from 'fromnow'
 import { deserialize } from 'pixutil/json'
 import Timer from 'timer'
 import sortBy from 'sortby'
+import addSignals from '@ludlovian/signal-extra/add-signals'
 
 import Task from './task.mjs'
-import { addSignals } from './signal-extra.mjs'
 import { getQuery } from '../util.mjs'
 
 const { fromEntries, entries, assign } = Object

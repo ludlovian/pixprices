@@ -1,10 +1,10 @@
 import { batch } from '@preact/signals-core'
-
+import addSignals from '@ludlovian/signal-extra/add-signals'
+import until from '@ludlovian/signal-extra/until'
 import Debug from '@ludlovian/debug'
 import Timer from 'timer'
 
 import { dateFormatter } from './util.mjs'
-import { addSignals, until } from './signal-extra.mjs'
 import { taskTimeout } from '../config.mjs'
 
 export default class Task {
