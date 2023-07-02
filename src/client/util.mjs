@@ -8,6 +8,7 @@ export function getQuery () {
 }
 
 export function fmtLongDate (d) {
+  d = new Date(d)
   return [
     d.toLocaleString('default', { weekday: 'short' }),
     d.getDate(),
