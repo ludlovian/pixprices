@@ -3,12 +3,15 @@
   const { location } = window
   console.log('PixPrices js injected.')
 
+  const tm = setTimeout(exit, 15 * 60 * 1000)
+
   const state = await fetch(`${server}/api/status/inject`).then(res =>
     res.json()
   )
 
   if (location.href !== state.url) {
     console.log(`Not on ${state.url}\nSkipping.`)
+    clearTimeout(tm)
     return
   }
 
@@ -30,7 +33,7 @@
       await new Promise(resolve => setTimeout(resolve, 10 * 1000))
     }
 
-    location.replace(`${server}/?role=worker`)
+    exit()
   }
 
   //
@@ -100,5 +103,9 @@
 
     const res = await fetch(url, { method, body }).then(res => res.json())
     if (!res.ok) throw new Error('POST failed')
+  }
+
+  function exit () {
+    location.replace(`${server}/?role=worker`)
   }
 })()

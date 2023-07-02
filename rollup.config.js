@@ -5,9 +5,15 @@ import copy from 'rollup-plugin-copy'
 import gzip from 'rollup-plugin-gzip'
 import terser from '@rollup/plugin-terser'
 import run from '@rollup/plugin-run'
+import babel from '@rollup/plugin-babel'
 
-const dev = process.env.NODE_ENV != 'production'
+const dev = process.env.NODE_ENV !== 'production'
 const watch = process.env.ROLLUP_WATCH === 'true'
+const ignore = name => ({
+  name: 'ignore-import',
+  resolveId: source => source === name ? name : null,
+  load: id => id === name ? 'export default null' : null
+})
 
 export default [
   {
@@ -33,7 +39,9 @@ export default [
       sourcemap: dev
     },
     plugins: [
+      !dev && ignore('preact/debug'),
       nodeResolve(),
+      babel({ babelHelpers: 'bundled' }),
       !dev && terser(),
       copy({
         targets: [
@@ -50,3 +58,4 @@ export default [
     ]
   }
 ]
+

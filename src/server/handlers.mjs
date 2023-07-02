@@ -1,7 +1,6 @@
 import { parse as parseQS } from 'node:querystring'
 
 import Debug from '@ludlovian/debug'
-import { serialize, deserialize } from 'pixutil/json'
 
 import model from './model/index.mjs'
 import { updatePriceSheet } from './sheet.mjs'
@@ -11,7 +10,7 @@ const debug = Debug('pixprices:server')
 
 export function getState (req, res) {
   debug('getState')
-  const s = JSON.stringify(serialize(model.state))
+  const s = JSON.stringify(model.state)
   res
     .writeHead(200, {
       'Content-Type': 'application/json;charset=utf-8',
@@ -23,7 +22,7 @@ export function getState (req, res) {
 export function getInjectState (req, res) {
   debug('getInjectState')
   const { id, url, status } = model.task
-  const s = JSON.stringify(serialize({ id, url, status, isDev }))
+  const s = JSON.stringify({ id, url, status, isDev })
   res
     .writeHead(200, {
       'Content-Type': 'application/json;charset=utf-8',
@@ -44,7 +43,7 @@ export function getStateStream (req, res) {
   })
 
   const cancel = model.listen(role, diff => {
-    const data = JSON.stringify(serialize(diff))
+    const data = JSON.stringify(diff)
     res.write(`data: ${data}\n\n`)
   })
 
@@ -75,7 +74,7 @@ export async function postPrices (req, res) {
   let retData
 
   try {
-    const prices = deserialize(req.json)
+    const prices = req.json
     const source = model.task.job
 
     await updatePriceSheet({ source: `lse:${source}`, prices })
@@ -92,7 +91,7 @@ export async function postPrices (req, res) {
     model.task.fail(message)
   }
 
-  const s = JSON.stringify(serialize(retData))
+  const s = JSON.stringify(retData)
   res
     .writeHead(statusCode, {
       'Content-Type': 'application/json;charset=utf-8',
