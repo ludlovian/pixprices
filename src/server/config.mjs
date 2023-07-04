@@ -36,17 +36,17 @@ export const jobs = (() => {
     'https://www.lse.co.uk/share-prices/' + name + '/constituents.html'
   return [
     {
-      job: 'AllShare',
+      name: 'AllShare',
       url: lseUrl('indices/ftse-all-share'),
       times: '09:40|13:40|16:40'.split('|').sort()
     },
     {
-      job: 'Aim',
+      name: 'Aim',
       url: lseUrl('indices/ftse-aim-all-share'),
       times: '09:45|13:45|16:45'.split('|').sort()
     },
     {
-      job: 'CEnd',
+      name: 'CEnd',
       url: lseUrl('sectors/closed-end-investments'),
       times: '09:50|13:50|16:50'.split('|').sort()
     }

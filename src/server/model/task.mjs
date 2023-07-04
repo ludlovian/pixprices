@@ -18,14 +18,16 @@ export default class Task {
 
   debug = Debug('pixprices:task')
 
-  constructor (data) {
+  constructor (job, due) {
+    this.job = job
+    this.due = due
+    Object.assign(this, job.spec)
+
     addSignals(this, {
       // core
-      id: 0,
-      job: '',
-      due: undefined,
+      // id is only assigned when we actually commission this job
+      id: undefined,
       stage: 0,
-      url: '',
       activity: [],
 
       // derived
@@ -34,9 +36,11 @@ export default class Task {
       isDue: () => this.stage >= Task.DUE,
       isStarted: () => this.stage >= Task.START,
       isFinished: () => this.stage >= Task.DONE,
+
+      // state sent to client
       state: () => ({
         id: this.id,
-        job: this.job,
+        job: this.job.name,
         name: this.name,
         due: this.due,
         status: this.status,
@@ -44,20 +48,26 @@ export default class Task {
       })
     })
 
-    Object.assign(this, data)
+    this._lifecycle()
   }
 
   _name () {
-    return this.due ? `${this.job} @ ${Task.fmtTime(this.due)}` : ''
+    return this.due ? `${this.job.name} @ ${Task.fmtTime(this.due)}` : ''
   }
 
-  async lifecycle () {
+  async _lifecycle () {
     const tm = new Timer()
-    this.stage = Task.WAIT
-    tm.set({ at: this.due, fn: () => (this.stage = Task.DUE) })
+    const now = new Date()
 
-    await until(() => this.isDue)
-    tm.cancel()
+    if (this.due > now) {
+      this.stage = Task.WAIT
+      tm.set({ at: this.due, fn: () => (this.stage = Task.DUE) })
+
+      await until(() => this.isDue)
+      tm.cancel()
+    } else {
+      this.stage = Task.DUE
+    }
 
     await until(() => this.isStarted)
     tm.set({ after: taskTimeout, fn: () => this.fail('Timed out') })

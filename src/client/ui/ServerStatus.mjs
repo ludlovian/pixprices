@@ -3,6 +3,7 @@ import { h, Fragment } from 'preact'
 import TimeSince from './TimeSince.mjs'
 
 export default function ServerStatus ({ model }) {
+  if (!model.version) return null
   return (
     <Fragment>
       <p class='text'>

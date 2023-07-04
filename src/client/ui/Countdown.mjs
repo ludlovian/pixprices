@@ -3,6 +3,7 @@ import { h, Fragment } from 'preact'
 import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 import { parse } from '@lukeed/ms'
+import fromNow from 'fromnow'
 import Timer from 'timer'
 
 export default function Countdown (props) {
@@ -19,7 +20,8 @@ function startTimer ($sig, opts) {
     every: freq,
     fn: () => {
       const ms = Math.max(0, target - Date.now())
-      $sig.value = fmtDuration(Math.floor(ms / 1e3))
+      $sig.value =
+        ms > 60e3 ? fromNow(target) : fmtDuration(Math.floor(ms / 1e3))
       if (!ms) tm.cancel()
     }
   }).fire()

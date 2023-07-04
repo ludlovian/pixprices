@@ -15,7 +15,7 @@ devDependencies:
     version: github.com/ludlovian/debug/52c340a997e7be86a5c1d6e3747c3e79f8caa994
   '@ludlovian/signal-extra':
     specifier: github:ludlovian/signal-extra
-    version: github.com/ludlovian/signal-extra/04ac4cb8f19c620bed79e746c789265a26ab16cb
+    version: github.com/ludlovian/signal-extra/09a0f1dc51f1b1e525a3bf7e42e8eb20a02235c3
   '@lukeed/ms':
     specifier: ^2.0.1
     version: 2.0.1
@@ -847,7 +847,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001509
+      caniuse-lite: 1.0.30001511
       electron-to-chromium: 1.4.447
       node-releases: 2.0.12
       update-browserslist-db: 1.0.11(browserslist@4.21.9)
@@ -871,8 +871,8 @@ packages:
       function-bind: 1.1.1
       get-intrinsic: 1.2.1
 
-  /caniuse-lite@1.0.30001509:
-    resolution: {integrity: sha512-2uDDk+TRiTX5hMcUYT/7CSyzMZxjfGu0vAUjS2g0LSD8UoXOv0LtpH4LxGMemsiPq6LCVIUjNwVM0erkOkGCDA==}
+  /caniuse-lite@1.0.30001511:
+    resolution: {integrity: sha512-NaWPJawcoedlghN4P7bDNeADD7K+rZaY6V8ZcME7PkEZo/nfOg+lnrUgRWiKbNxcQ4/toFKSxnS4WdbyPZnKkw==}
     dev: true
 
   /catharsis@0.9.0:
@@ -2288,10 +2288,10 @@ packages:
     version: 0.1.0
     dev: true
 
-  github.com/ludlovian/diff-object/06f54ee0e806f46119b995482e316c525319529e:
-    resolution: {tarball: https://codeload.github.com/ludlovian/diff-object/tar.gz/06f54ee0e806f46119b995482e316c525319529e}
+  github.com/ludlovian/diff-object/9ac8a74806186c2badc751f9fde6a7d31db67868:
+    resolution: {tarball: https://codeload.github.com/ludlovian/diff-object/tar.gz/9ac8a74806186c2badc751f9fde6a7d31db67868}
     name: '@ludlovian/diff-object'
-    version: 0.1.2
+    version: 0.2.0
     dependencies:
       pixutil: github.com/ludlovian/pixutil/af44ea08a361af0064695097cd1fa9caa9e07e53
       uvu: 0.5.6
@@ -2357,12 +2357,12 @@ packages:
     version: 2.0.2
     dev: true
 
-  github.com/ludlovian/signal-extra/04ac4cb8f19c620bed79e746c789265a26ab16cb:
-    resolution: {tarball: https://codeload.github.com/ludlovian/signal-extra/tar.gz/04ac4cb8f19c620bed79e746c789265a26ab16cb}
+  github.com/ludlovian/signal-extra/09a0f1dc51f1b1e525a3bf7e42e8eb20a02235c3:
+    resolution: {tarball: https://codeload.github.com/ludlovian/signal-extra/tar.gz/09a0f1dc51f1b1e525a3bf7e42e8eb20a02235c3}
     name: '@ludlovian/signal-extra'
-    version: 0.1.2
+    version: 0.2.0
     dependencies:
-      '@ludlovian/diff-object': github.com/ludlovian/diff-object/06f54ee0e806f46119b995482e316c525319529e
+      '@ludlovian/diff-object': github.com/ludlovian/diff-object/9ac8a74806186c2badc751f9fde6a7d31db67868
       '@preact/signals-core': 1.3.1
       bouncer: github.com/ludlovian/bouncer/51c836d366fca5e1d5c3332dd4c03b599c9b12d1
     dev: true

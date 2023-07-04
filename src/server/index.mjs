@@ -9,8 +9,9 @@ import {
   getInjectState,
   getState,
   getStateStream,
-  requestTask,
-  postPrices
+  requestNextTask,
+  postPrices,
+  addAdhocJob
 } from './handlers.mjs'
 
 class Server {
@@ -34,8 +35,9 @@ class Server {
       .get('/api/status/inject', getInjectState)
       .get('/api/status/state', getState)
       .get('/api/status/updates', getStateStream)
-      .get('/api/task/:id', requestTask)
+      .get('/api/task/next', requestNextTask)
       .post('/api/task/:id', postPrices)
+      .post('/api/task/add/:name', addAdhocJob)
 
     return new Promise((resolve, reject) => {
       server.on('error', reject)

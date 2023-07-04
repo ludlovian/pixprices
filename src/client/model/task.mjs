@@ -1,9 +1,7 @@
 import addSignals from '@ludlovian/signal-extra/add-signals'
 
 export default class Task {
-  constructor (model, data) {
-    this.model = model
-
+  constructor () {
     addSignals(this, {
       // from server
       id: 0,
@@ -17,8 +15,6 @@ export default class Task {
       isDue: () => this.status === 'due',
       isWaiting: () => this.status === 'wait'
     })
-
-    this._onData(data)
   }
 
   _onData (data) {

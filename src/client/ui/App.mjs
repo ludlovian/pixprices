@@ -4,7 +4,8 @@ import { h } from 'preact'
 import model from '../model/index.mjs'
 import Role from './Role.mjs'
 import ServerStatus from './ServerStatus.mjs'
-import NextTask from './NextTask.mjs'
+import Jobs from './Jobs.mjs'
+import CurrentTask from './CurrentTask.mjs'
 import RecentTasks from './RecentTasks.mjs'
 
 export default function App () {
@@ -14,7 +15,8 @@ export default function App () {
       <h3>Pix Prices status</h3>
       <Role model={model} />
       <ServerStatus model={model} />
-      <NextTask task={model.task} />
+      <Jobs jobs={model.jobs} />
+      <CurrentTask task={model.task} />
       <RecentTasks recent={model.recent} />
     </div>
   )

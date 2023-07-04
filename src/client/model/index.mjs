@@ -1,12 +1,12 @@
 import { effect, batch } from '@preact/signals'
-import { deserialize } from 'pixutil/json'
 import sortBy from 'sortby'
 import addSignals from '@ludlovian/signal-extra/add-signals'
 
-import Task from './task.mjs'
 import { getQuery } from '../util.mjs'
+import Task from './task.mjs'
 
-const { fromEntries, entries } = Object
+const { assign, entries } = Object
+const defer = Promise.prototype.then.bind(Promise.resolve())
 
 class Model {
   constructor () {
@@ -14,43 +14,35 @@ class Model {
       // from server
       version: '',
       started: '',
-      watchers: 0,
       workers: 0,
-      oldest: 0,
-      current: 0,
-      isDev: false,
-      tasks: [],
+      watchers: 0,
+      task: new Task(),
+      history: [],
+      jobs: [],
 
       // local
       role: getQuery().role || 'watcher',
 
       // derived
-      byID: () => fromEntries(this.tasks.map(t => [t.id, t])),
-      task: () => this.byID[this.current],
-      recent: () => this.tasks.filter(t => t.id !== this.current),
+      recent: () => this.history.sort(sortBy('id', true)),
       isWorker: () => this.role === 'worker'
     })
   }
 
   _onData (data) {
     batch(() => {
-      if ('server' in data) {
-        for (const [key, value] of entries(data.server)) {
-          if (key in this) this[key] = value
-        }
-      }
-
-      if ('tasks' in data) {
-        for (const [id, update] of entries(data.tasks)) {
-          const task = this.byID[id]
-          if (task) {
-            task._onData(update)
+      for (const [key, value] of entries(data)) {
+        if (key === 'server') {
+          assign(this, value)
+        } else if (key === 'task') {
+          if (value === null) {
+            this.task = null
           } else {
-            const task = new Task(this, update)
-            this.tasks = [...this.tasks, task]
-              .filter(t => t.id >= this.oldest)
-              .sort(sortBy(t => t.id, true))
+            if (!this.task) this.task = new Task()
+            this.task._onData(value)
           }
+        } else {
+          if (key in this) this[key] = value
         }
       }
     })
@@ -60,14 +52,14 @@ class Model {
     const source = new window.EventSource(
       `/api/status/updates?role=${this.role}`
     )
-    source.onmessage = ({ data }) => this._onData(deserialize(JSON.parse(data)))
+    source.onmessage = ({ data }) => this._onData(JSON.parse(data))
 
     const dispose = effect(() => {
       if (this.isWorker && this.task?.isDue) {
-        Promise.resolve().then(() => {
+        defer(() => {
           source.close()
           dispose()
-          window.location.assign(`/api/task/${this.task.id}`)
+          window.location.assign('/api/task/next')
         })
       }
     })

@@ -4,7 +4,6 @@ import Debug from '@ludlovian/debug'
 
 import model from './model/index.mjs'
 import { updatePriceSheet } from './sheet.mjs'
-import { isDev } from './config.mjs'
 
 const debug = Debug('pixprices:server')
 
@@ -21,8 +20,8 @@ export function getState (req, res) {
 
 export function getInjectState (req, res) {
   debug('getInjectState')
-  const { id, url, status } = model.task
-  const s = JSON.stringify({ id, url, status, isDev })
+  const state = model.jobs.injectState
+  const s = JSON.stringify(state)
   res
     .writeHead(200, {
       'Content-Type': 'application/json;charset=utf-8',
@@ -50,10 +49,9 @@ export function getStateStream (req, res) {
   req.on('close', cancel)
 }
 
-export function requestTask (req, res) {
-  debug('requestTask %o', req.params)
-  const id = toNumber(req.params.id)
-  if (id !== model.task.id) return res.writeHead(404).end()
+export function requestNextTask (req, res) {
+  debug('requestNextTask')
+  if (!model.task) return res.writeHead(404).end()
 
   model.task.start()
 
@@ -66,16 +64,15 @@ export function requestTask (req, res) {
 }
 
 export async function postPrices (req, res) {
-  const id = toNumber(req.params.id)
-  if (id !== model.task.id) return res.writeHead(404).end()
-  debug('postPrices')
+  debug('postPrices %o', req.params)
+  if (!model.isCurrent(req.params.id)) return res.writeHead(404).end()
 
   let statusCode = 200
   let retData
 
   try {
     const prices = req.json
-    const source = model.task.job
+    const source = model.task.job.name
 
     await updatePriceSheet({ source: `lse:${source}`, prices })
 
@@ -100,7 +97,11 @@ export async function postPrices (req, res) {
     .end(s)
 }
 
-function toNumber (s) {
-  const v = parseInt(s || '0')
-  return Number.isNaN(v) ? 0 : v
+export function addAdhocJob (req, res) {
+  debug('addAdhocJob %o', req.params)
+  if (model.jobs.addAdhoc(req.params.name)) {
+    res.writeHead(200).end()
+  } else {
+    res.writeHead(404).end()
+  }
 }
