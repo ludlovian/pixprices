@@ -8,24 +8,49 @@ export default function Jobs ({ jobs }) {
     <Fragment>
       <hr />
       <h4>Jobs</h4>
-      {jobs.map((j, ix) => (
-        <Job name={j.name} key={j.job} job={j.job} due={ix ? null : j.due} />
+      {jobs.map((job, ix) => (
+        <Job key={job.job} {...job} showStatus={ix === 0} />
       ))}
     </Fragment>
   )
 }
 
-function Job ({ job, name, due }) {
+function Job ({ job, name, due, status, showStatus }) {
   return (
-    <div class='text my-1'>
-      <AddNewJob job={job} /> {name}
-      {due && (
-        <Fragment>
-          {' - due in '}
-          <Countdown target={due} />
-        </Fragment>
-      )}
+    <div class='row my-2'>
+      <div class='col-auto'>
+        <AddNewJob job={job} />
+      </div>
+      <div class='col'>
+        {name}
+        {showStatus && <JobStatus due={due} status={status} />}
+      </div>
     </div>
+  )
+}
+
+function JobStatus ({ due, status }) {
+  const running = status !== 'wait' && status !== 'due'
+  return (
+    <Fragment>
+      <br />
+      <span class='fst-italic'>
+        {running ? <JobRunning /> : <JobDue due={due} />}
+      </span>
+    </Fragment>
+  )
+}
+
+function JobRunning () {
+  return 'Running'
+}
+
+function JobDue ({ due }) {
+  return (
+    <Fragment>
+      {'Due in '}
+      <Countdown target={due} />
+    </Fragment>
   )
 }
 

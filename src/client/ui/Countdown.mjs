@@ -24,7 +24,8 @@ function startTimer ($sig, opts) {
         ms > 60e3 ? fromNow(target) : fmtDuration(Math.floor(ms / 1e3))
       if (!ms) tm.cancel()
     }
-  }).fire()
+  })
+  tm.fire()
   return () => tm.cancel()
 }
 

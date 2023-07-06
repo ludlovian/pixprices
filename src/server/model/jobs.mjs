@@ -16,35 +16,51 @@ class Jobs {
     this._parent = parent
 
     addSignals(this, {
+      //
       // core data
+      //
+      // Jobs specifications
       jobs: configJobs.map(spec => new Job(this, spec)),
+
+      // Sorted queue of the next day's worth of tasks
       queue: [],
-      current: null,
-      taskId: 1,
+
+      // Last task ID given out
+      taskId: 0,
+
+      // History of recently run tasks
       history: [],
 
-      // derived
+      //
+      // derived data
+      //
+      // Currently running task (if any)
+      current: () => (this.queue[0]?.isDue ? this.queue[0] : null),
+
+      // Job specs by name
       byName: () => fromEntries(this.jobs.map(job => [job.name, job])),
-      hasCurrent: () => this.current != null,
+
+      // Is there are current job
+      hasCurrent: () => !!this.current,
+
+      // How far back does the history go?
       oldestId: () =>
         this.history.length
           ? Math.min(...this.history.map(task => task.id))
           : 0,
-      nextTasks: () =>
+
+      // The next task for each job
+      nextTasksPerJob: () =>
         this.jobs.map(job => this.queue.find(task => task.job === job)),
 
       // state for the client
       state: () => ({
         task: this.current?.state ?? null,
         history: this.history.map(task => task.state),
-        jobs: this.nextTasks
-          .map(task => ({
-            job: task.job.name,
-            due: task.due,
-            name: task.name
-          }))
-          .sort(sortBy('due'))
+        jobs: this.nextTasksPerJob.map(task => task.state)
       }),
+
+      // State for the injected JS code
       injectState: () => ({
         id: this.current?.id ?? null,
         url: this.current?.url ?? null,
@@ -62,17 +78,13 @@ class Jobs {
       if (this.hasCurrent && this.current.isFinished) {
         this.debug('Archiving "%s"', this.current.name)
         this.history = [...this.history, this.current].slice(-taskHistoryLength)
-        this.current = null
-        this.taskId++
+        this.queue = this.queue.slice(1)
+        this.buildQueue()
       }
 
-      if (!this.hasCurrent && this.queue[0]?.isDue) {
-        const [task, ...rest] = this.queue
-        task.id = this.taskId
-        this.current = task
-        this.queue = rest
-        this.buildQueue()
-        this.debug('Task "%s" made current', task.name)
+      if (this.hasCurrent && this.current.id == null) {
+        this.current.id = ++this.taskId
+        this.debug('Task "%s" made current', this.current.name)
       }
     })
   }
@@ -103,7 +115,7 @@ class Jobs {
 
     batch(() => {
       const task = new Task(job, now)
-      this.queue = [task, ...this.queue]
+      this.queue = [task, ...this.queue].sort(sortBy('due'))
       this.debug('Added adhoc job "%s"', task.name)
     })
     return true

@@ -1,7 +1,7 @@
 /** @jsx h */
 import { h } from 'preact'
 
-import model from '../model/index.mjs'
+import model from '../model.mjs'
 import Role from './Role.mjs'
 import ServerStatus from './ServerStatus.mjs'
 import Jobs from './Jobs.mjs'

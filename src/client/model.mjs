@@ -2,8 +2,7 @@ import { effect, batch } from '@preact/signals'
 import sortBy from 'sortby'
 import addSignals from '@ludlovian/signal-extra/add-signals'
 
-import { getQuery } from '../util.mjs'
-import Task from './task.mjs'
+import { getQuery } from './util.mjs'
 
 const { assign, entries } = Object
 const defer = Promise.prototype.then.bind(Promise.resolve())
@@ -16,7 +15,7 @@ class Model {
       started: '',
       workers: 0,
       watchers: 0,
-      task: new Task(),
+      task: null,
       history: [],
       jobs: [],
 
@@ -25,7 +24,9 @@ class Model {
 
       // derived
       recent: () => this.history.sort(sortBy('id', true)),
-      isWorker: () => this.role === 'worker'
+      isWorker: () => this.role === 'worker',
+      shouldStartTask: () =>
+        this.isWorker && this.task && this.task.status === 'due'
     })
   }
 
@@ -34,13 +35,6 @@ class Model {
       for (const [key, value] of entries(data)) {
         if (key === 'server') {
           assign(this, value)
-        } else if (key === 'task') {
-          if (value === null) {
-            this.task = null
-          } else {
-            if (!this.task) this.task = new Task()
-            this.task._onData(value)
-          }
         } else {
           if (key in this) this[key] = value
         }
@@ -55,7 +49,7 @@ class Model {
     source.onmessage = ({ data }) => this._onData(JSON.parse(data))
 
     const dispose = effect(() => {
-      if (this.isWorker && this.task?.isDue) {
+      if (this.shouldStartTask) {
         defer(() => {
           source.close()
           dispose()
