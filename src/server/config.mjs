@@ -64,5 +64,6 @@ export const priceStore = {
   id: '1UdNhJNLWriEJtAJdbxwswGTl8CBcDK1nkEmJvwbc_5c',
   range: rows => `${isDev ? 'Test' : 'Prices'}!A2:E${rows ? rows + 1 : ''}`,
   credentials: 'creds/credentials.json',
-  pruneAfter: parseMs('7d')
+  pruneAfter: parseMs('7d'),
+  recentUpdate: parseMs('1h')
 }

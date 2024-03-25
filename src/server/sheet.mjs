@@ -69,14 +69,27 @@ export function updatePriceSheet ({ source, prices }) {
 
     const priceMap = await loadPrices()
     const prevSize = priceMap.size
+    let skipped = 0
 
     for (const { ticker, name, price } of prices) {
+      if (priceMap.has(ticker)) {
+        const { updated: prevUpdated } = priceMap.get(ticker)
+        if (updated - prevUpdated < priceStore.recentUpdate) {
+          skipped++
+          continue
+        }
+      }
       priceMap.set(ticker, { ticker, name, price, source, updated })
     }
 
     pruneOldPrices(priceMap, priceStore.pruneAfter)
 
     await writePrices(priceMap, prevSize)
-    debug('%d prices written from %s', prices.length, source)
+    debug(
+      '%d prices written from %s, %d skipped',
+      prices.length,
+      source,
+      skipped
+    )
   })
 }
