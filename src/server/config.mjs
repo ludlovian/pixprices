@@ -49,6 +49,11 @@ export const jobs = (() => {
       name: 'CEnd',
       url: lseUrl('sectors/closed-end-investments'),
       times: '09:50|13:50|16:50'.split('|').sort()
+    },
+    {
+      name: 'BrkServ',
+      url: lseUrl('sectors/brokerage-services'),
+      times: '09:55|13:55|16:55'.split('|').sort()
     }
   ]
 })()
