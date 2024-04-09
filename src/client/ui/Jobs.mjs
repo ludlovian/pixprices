@@ -1,5 +1,6 @@
 /** @jsx h */
 import { h, Fragment } from 'preact'
+import sortBy from 'sortby'
 import Countdown from './Countdown.mjs'
 
 export default function Jobs ({ jobs }) {
@@ -8,7 +9,7 @@ export default function Jobs ({ jobs }) {
     <Fragment>
       <hr />
       <h4>Jobs</h4>
-      {jobs.map((job, ix) => (
+      {jobs.sort(sortBy('due')).map((job, ix) => (
         <Job key={job.job} {...job} showStatus={ix === 0} />
       ))}
     </Fragment>

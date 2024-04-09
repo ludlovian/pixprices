@@ -3,9 +3,11 @@ import Debug from '@ludlovian/debug'
 import sortBy from 'sortby'
 import addSignals from '@ludlovian/signal-extra/add-signals'
 
-import { jobs as configJobs, taskHistoryLength, isDev } from '../config.mjs'
 import Task from './task.mjs'
 import { dateFromDayAndTime, advanceOneDay } from './util.mjs'
+
+import { taskHistoryLength, isDev } from '../config.mjs'
+import configJobs from '../jobs/config.mjs'
 
 const { fromEntries } = Object
 

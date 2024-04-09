@@ -22,14 +22,12 @@
   //
   async function main () {
     await isDomLoaded()
-
-    const prices = scrapeIndexPrices()
-
-    await postPrices(prices)
+    const body = document.body.outerHTML
     window.stop()
+    await postBody({ body })
 
     if (state.isTest) {
-      console.log('Prices posted. Waiting to return.')
+      console.log('Data posted. Waiting to return.')
       await new Promise(resolve => setTimeout(resolve, 10 * 1000))
     }
 
@@ -49,56 +47,11 @@
     })
   }
 
-  //
-  // Scraping
-  //
-
-  function scrapeIndexPrices () {
-    const tableSelector = [
-      'table.sp-constituents__table',
-      'table.sp-sectors__table'
-    ].join(',')
-
-    const rgxNameAndTicker = /^(.*) \((\w+)\.*\)$/
-    const rgxNumber = /^[\d.,]+$/
-
-    const table = document.querySelector(tableSelector)
-    if (!table) throw new Error('Could not find table')
-
-    return getRowsFromTable(table)
-      .map(extractPriceFromRow)
-      .filter(Boolean)
-
-    function getRowsFromTable (table) {
-      return [...table.querySelectorAll('tr')]
-    }
-
-    function extractPriceFromRow (row) {
-      const [nameTicker, priceString] = getCellsFromRow(row)
-      const [name, ticker] = readNameAndTicker(nameTicker)
-      const price = readPrice(priceString)
-      return name && ticker && price != null ? { name, ticker, price } : null
-    }
-
-    function getCellsFromRow (row) {
-      return [...row.querySelectorAll('td')].map(td => td.textContent)
-    }
-
-    function readNameAndTicker (txt) {
-      if (!txt) return []
-      const m = rgxNameAndTicker.exec(txt)
-      return m ? [m[1], m[2]] : []
-    }
-
-    function readPrice (txt) {
-      return txt && rgxNumber.test(txt) ? Number(txt.replaceAll(',', '')) : null
-    }
-  }
-
-  async function postPrices (prices) {
+  async function postBody (data) {
+    console.log(data)
     const { id } = state
     const url = `${server}/api/task/${id}`
-    const body = JSON.stringify(prices)
+    const body = JSON.stringify(data)
     const method = 'POST'
 
     const res = await fetch(url, { method, body }).then(res => res.json())

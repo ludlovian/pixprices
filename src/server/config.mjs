@@ -31,39 +31,9 @@ export const allowedOrigins = ['https://www.lse.co.uk']
 export const taskHistoryLength = 20
 export const taskTimeout = parseMs('5m')
 export const taskLookback = parseMs('1d')
-export const jobs = (() => {
-  const lseUrl = name =>
-    'https://www.lse.co.uk/share-prices/' + name + '/constituents.html'
-  return [
-    {
-      name: 'AllShare',
-      url: lseUrl('indices/ftse-all-share'),
-      times: '09:40|13:40|16:40'.split('|').sort()
-    },
-    {
-      name: 'Aim',
-      url: lseUrl('indices/ftse-aim-all-share'),
-      times: '09:45|13:45|16:45'.split('|').sort()
-    },
-    {
-      name: 'CEnd',
-      url: lseUrl('sectors/closed-end-investments'),
-      times: '09:50|13:50|16:50'.split('|').sort()
-    },
-    {
-      name: 'BrkServ',
-      url: lseUrl('sectors/brokerage-services'),
-      times: '09:55|13:55|16:55'.split('|').sort()
-    }
-  ]
-})()
 
 // Price store
 
-export const priceStore = {
-  id: '1UdNhJNLWriEJtAJdbxwswGTl8CBcDK1nkEmJvwbc_5c',
-  range: rows => `${isDev ? 'Test' : 'Prices'}!A2:E${rows ? rows + 1 : ''}`,
-  credentials: 'creds/credentials.json',
-  pruneAfter: parseMs('7d'),
-  recentUpdate: parseMs('1h')
+export const sheetsOptions = {
+  credentials: 'creds/credentials.json'
 }

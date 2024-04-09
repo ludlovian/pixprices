@@ -3,7 +3,7 @@ import { parse as parseQS } from 'node:querystring'
 import Debug from '@ludlovian/debug'
 
 import model from './model/index.mjs'
-import { updatePriceSheet } from './sheet.mjs'
+import { startTask, completeTask } from './jobs/index.mjs'
 
 const debug = Debug('pixprices:server')
 
@@ -49,34 +49,30 @@ export function getStateStream (req, res) {
   req.on('close', cancel)
 }
 
-export function requestNextTask (req, res) {
+export async function startNextTask (req, res) {
   debug('requestNextTask')
   if (!model.task) return res.writeHead(404).end()
 
   model.task.start()
+  const url = await startTask(model.task)
 
   res
     .writeHead(302, {
-      Location: model.task.url,
+      Location: url,
       'Content-Length': 0
     })
     .end()
 }
 
-export async function postPrices (req, res) {
-  debug('postPrices %o', req.params)
+export async function postData (req, res) {
+  debug('postData %o', req.params)
   if (!model.isCurrent(req.params.id)) return res.writeHead(404).end()
 
   let statusCode = 200
   let retData
 
   try {
-    const prices = req.json
-    const source = model.task.job.name
-
-    await updatePriceSheet({ source: `lse:${source}`, prices })
-
-    const message = `${prices.length} prices from ${source}`
+    const message = await completeTask(model.task, req.json)
     model.task.complete(message)
     retData = { message, ok: true }
   } catch (err) {
@@ -84,7 +80,6 @@ export async function postPrices (req, res) {
     const { message } = err
     retData = { message, ok: false }
     statusCode = 503
-
     model.task.fail(message)
   }
 
