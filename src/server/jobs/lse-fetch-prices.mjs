@@ -23,7 +23,7 @@ export default async function extractPrices (task, xml) {
 
   const changes = table
     .findAll('tr')
-    .map(row => row.findAll('td').map(td => td.textAll.join('')))
+    .map(row => row.findAll('td').map(td => td.textAll.join('').trim()))
     .map(([nameAndTicker, priceString]) => ({
       ...parseNameAndTicker(nameAndTicker),
       price: parsePrice(priceString),
