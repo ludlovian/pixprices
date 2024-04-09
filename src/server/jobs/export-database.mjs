@@ -3,10 +3,12 @@ import * as sheets from 'googlejs/sheets'
 import dbConfig from '../db/config.mjs'
 
 const debug = Debug('pixprices:export-database')
+const { entries } = Object
 
 export default async function exportDatabase (task) {
   let count = 0
-  for (const [table, dests] of Object.entries(task.exports)) {
+  const exp = task.exports
+  for (const [table, dests] of entries(exp)) {
     const data = await readSheet(dbConfig.id, table)
     for (const { id, sheet } of dests) {
       await writeSheet(id, sheet, data)
@@ -15,7 +17,7 @@ export default async function exportDatabase (task) {
 
     debug('%s copied to %d dest(s)', table, dests.length)
   }
-  return `${task.exports.length} tables copied to ${count} dest(s)`
+  return `${entries(exp).length} tables copied to ${count} dest(s)`
 }
 
 async function readSheet (id, sheet) {

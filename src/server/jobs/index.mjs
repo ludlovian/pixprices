@@ -15,10 +15,7 @@ export function startTask (task) {
     case 'export-database':
       exportDatabase(task).then(
         msg => task.complete(msg),
-        err => {
-          throw err;process.exit()
-          task.fail(err.message)
-        }
+        err => task.fail(err.message)
       )
       return '/?role=worker'
     default:
