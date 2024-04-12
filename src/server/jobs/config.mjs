@@ -51,12 +51,11 @@ export default [
     spreadsheet: '1fvIwUoLsLLnDQTAY4qgRmao50nQny-ad28t9j9xXJeA',
     positions: {
       sheet: 'Investments',
-      indexRow: 3
+      range: 'A3:ZZ9999'
     },
     trades: {
       sheet: 'Trades',
-      range: 'A2:H9999',
-      columns: 'ticker,account,who,date,qty,cost,gain,notes'.split(',')
+      range: 'A2:H9999'
     }
   },
 

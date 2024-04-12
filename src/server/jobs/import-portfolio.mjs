@@ -65,13 +65,12 @@ function readPositions (row) {
 async function readPortfolioSheet (task) {
   const rawData = await sheets.getRange({
     sheet: task.spreadsheet,
-    range: `${task.positions.sheet}!A1:ZZ9999`,
+    range: `${task.positions.sheet}!${task.positions.range}`,
     scopes: sheets.scopes.rw,
     ...sheetsOptions
   })
 
-  const cols = rawData[task.positions.indexRow - 1]
-
+  const cols = rawData.shift()
   const data = rawData
     .slice(task.positions.indexRow)
     .map(row => rowToObject(row, cols))
@@ -88,8 +87,10 @@ async function importTrades (task) {
     scopes: sheets.scopes.rw,
     ...sheetsOptions
   })
+
+  const cols = rawData.shift()
   const data = rawData
-    .map(row => rowToObject(row, task.trades.columns))
+    .map(row => rowToObject(row, cols))
     .map(emptyStringToUndef)
     .map(t => ({ ...t, date: sheets.toDate(t.date) }))
 
