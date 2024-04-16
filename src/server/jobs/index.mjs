@@ -1,10 +1,13 @@
 import extractPrices from './lse-fetch-prices.mjs'
+import extractDividends from './fetch-dividends.mjs'
 import importPortfolio from './import-portfolio.mjs'
 import exportDatabase from './export-database.mjs'
 
 export function startTask (task) {
   switch (task.type) {
     case 'lse-prices':
+      return task.url
+    case 'dividends':
       return task.url
     case 'import-portfolio':
       importPortfolio(task).then(
@@ -27,6 +30,8 @@ export function completeTask (task, data) {
   switch (task.type) {
     case 'lse-prices':
       return extractPrices(task, data.body)
+    case 'dividends':
+      return extractDividends(task, data.body)
     default:
       throw new Error(`No such task type: ${task.type}`)
   }

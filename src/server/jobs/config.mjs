@@ -44,6 +44,15 @@ export default [
   },
 
   {
+    name: 'Dividends',
+    times: ['09:30'],
+
+    type: 'dividends',
+    source: 'dividenddata',
+    url: 'https://www.dividenddata.co.uk/'
+  },
+
+  {
     name: 'Import',
     times: '10:05|11:05|12:05|13:05|14:05|15:05|16:05|17:05'.split('|').sort(),
 

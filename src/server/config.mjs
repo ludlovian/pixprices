@@ -24,7 +24,10 @@ export const serverSSL = {
 export const origin = `https://${hostname}.pix.uk.to:${serverPort}`
 
 // Client settings
-export const allowedOrigins = ['https://www.lse.co.uk']
+export const allowedOrigins = [
+  'https://www.lse.co.uk',
+  'https://www.dividenddata.co.uk'
+]
 
 // Task settings
 

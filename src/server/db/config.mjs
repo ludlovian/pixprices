@@ -12,6 +12,7 @@ export default {
 
   tables: {
     prices: 'Prices',
+    dividends: 'Dividends',
     stocks: 'Stocks',
     positions: 'Positions',
     trades: 'Trades',
