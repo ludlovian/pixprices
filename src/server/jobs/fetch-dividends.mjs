@@ -38,7 +38,7 @@ export default async function extractDividends (task, xml) {
 
   await dividends.save()
 
-  const message = `Fetched ${count.total} (${count.added} new) dividends`
+  const message = `Fetched ${count.total} dividends (${count.added} new)`
 
   debug(message)
   return message
