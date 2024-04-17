@@ -35,9 +35,10 @@ class Dividends extends Table {
   }
 
   apply (changes) {
-    const count = { updated: 0 }
+    const count = { updated: 0, total: 0, added: 0 }
 
     for (const chg of changes) {
+      count.total++
       const div = this.data.find(
         d => +d.date === +chg.date && d.ticker === chg.ticker
       )
@@ -46,7 +47,7 @@ class Dividends extends Table {
         count.updated++
       } else {
         this.data.push(new Dividend(chg))
-        count.updated++
+        count.added++
       }
     }
 
