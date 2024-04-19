@@ -91,6 +91,7 @@ async function importTrades (task) {
   const cols = rawData.shift()
   const data = rawData
     .map(row => rowToObject(row, cols))
+    .filter(row => !!row.ticker.trim())
     .map(emptyStringToUndef)
     .map(t => ({ ...t, date: sheets.toDate(t.date) }))
 
