@@ -2,13 +2,17 @@ import { parse as parseMs } from '@lukeed/ms'
 import Debug from '@ludlovian/debug'
 import * as sheets from 'googlejs/sheets'
 import createSerial from 'pixutil/serial'
+import clone from 'pixutil/clone'
+import equal from 'pixutil/equal'
 
 import {
   removeTrailingEmptyRows,
   rowToObject,
   objectToRow,
   emptyStringToUndef,
-  undefToEmptyString
+  undefToEmptyString,
+  applyTransforms,
+  normaliseArray
 } from './util.mjs'
 
 const serial = createSerial()
@@ -19,15 +23,31 @@ const debug = Debug('pixprices:sheetdb')
 export class Table {
   // Each table should be an instance of this
 
-  constructor ({ source, sheet, row, columns, ...options }) {
-    assign(this, { source, sheet, row, columns, options })
+  constructor ({
+    source,
+    sheet,
+    row,
+    columns,
+    serialize,
+    deserialize,
+    ...options
+  }) {
+    assign(this, {
+      source,
+      sheet,
+      row,
+      columns,
+      serialize,
+      deserialize,
+      options
+    })
 
     this.data = []
-    this.rowCount = 0
+    this._oldData = []
     this.lastLoaded = 0
   }
 
-  isStale (period = parseMs('15m')) {
+  isStale (period = parseMs('2m')) {
     return !this.lastLoaded || this.lastLoaded < Date.now() - period
   }
 
@@ -45,37 +65,57 @@ export class Table {
     if (!data) data = []
 
     this.lastLoaded = Date.now()
-    data = removeTrailingEmptyRows(data)
-    this.rowCount = data.length
+    data = normaliseArray(removeTrailingEmptyRows(data), n)
+    this._oldData = clone(data)
 
-    const Factory = this.row
     this.data = data
       .map(row => rowToObject(row, this.columns))
       .map(obj => emptyStringToUndef(obj))
-      .map(obj => new Factory(obj))
-      .map(row => assign(row, row.deserialize()))
+      .map(obj => applyTransforms(this.deserialize, obj))
+      .map(
+        this.row
+          ? obj => assign(Object.create(this.row.prototype), obj)
+          : obj => obj
+      )
 
     debug('Loaded %d rows from %s', data.length, range)
     return this.data
   }
 
   async save () {
-    const n = this.columns.length
+    // First we make sure we are not stale
+    if (this.isStale()) {
+      const newData = this.data
+      await this.load()
+      this.data = newData
+    }
+
+    // convert to POJOs
+    // turn POJOs into cells
     const data = this.data
-      .map(row => row.serialize())
+      .map(obj => ({ ...obj }))
+      .map(obj => applyTransforms(this.serialize, obj))
       .map(obj => undefToEmptyString(obj))
       .map(obj => objectToRow(obj, this.columns))
 
-    const oldRowCount = this.rowCount
-    this.rowCount = data.length
+    // If unchanged, then our work here is done
+    if (equal(data, this._oldData)) {
+      debug('Skipped update of %s - no change', this.sheet)
+      return
+    }
+    const nCols = this.columns.length
+    const blank = Array.from({ length: nCols }, () => '')
+    const nRows = this._oldData.length
+    this._oldData = clone(data)
+
+    while (data.length < nRows) {
+      data.push([...blank])
+    }
     this.lastLoaded = Date.now()
 
-    while (oldRowCount > data.length) {
-      data.push(Array.from({ length: n }, () => ''))
-    }
     if (!data.length) return undefined
 
-    const range = `${this.sheet}!${getRange(2, 1, data.length, n)}`
+    const range = `${this.sheet}!${getRange(2, 1, data.length, nCols)}`
 
     await serial.exec(() =>
       sheets.updateRange({
@@ -94,16 +134,6 @@ export class Table {
 export class Row {
   constructor (data = {}) {
     assign(this, data)
-  }
-
-  // Called on each row as it is written out to the sheet
-  serialize () {
-    return this
-  }
-
-  // Called on each row as it is read in from the sheet
-  deserialize () {
-    return this
   }
 }
 

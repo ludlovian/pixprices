@@ -1,6 +1,6 @@
 import sortBy from 'sortby'
 
-import { Table, Row } from './sheetdb.mjs'
+import { Table } from './sheetdb.mjs'
 import dbConfig from './config.mjs'
 
 class Metrics extends Table {
@@ -13,7 +13,6 @@ class Metrics extends Table {
       ...dbConfig.options,
       source: dbConfig.id,
       sheet: dbConfig.tables.metrics,
-      row: Metric,
       columns: ['ticker', 'dividend', 'nav', 'eps']
     })
   }
@@ -28,11 +27,9 @@ class Metrics extends Table {
   }
 
   replace (data) {
-    this.data = data.map(obj => new Metric(obj))
+    this.data = data
     this.sort()
   }
 }
-
-class Metric extends Row {}
 
 export default Metrics.instance()

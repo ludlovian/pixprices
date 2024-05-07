@@ -1,6 +1,6 @@
 import sortBy from 'sortby'
 
-import { Table, Row } from './sheetdb.mjs'
+import { Table } from './sheetdb.mjs'
 import dbConfig from './config.mjs'
 
 class Positions extends Table {
@@ -13,7 +13,6 @@ class Positions extends Table {
       ...dbConfig.options,
       source: dbConfig.id,
       sheet: dbConfig.tables.positions,
-      row: Position,
       columns: ['ticker', 'account', 'who', 'qty']
     })
   }
@@ -31,11 +30,9 @@ class Positions extends Table {
   }
 
   replace (data) {
-    this.data = data.map(obj => new Position(obj))
+    this.data = data
     this.sort()
   }
 }
-
-class Position extends Row {}
 
 export default Positions.instance()

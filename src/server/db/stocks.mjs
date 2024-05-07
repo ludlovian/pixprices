@@ -1,6 +1,6 @@
 import sortBy from 'sortby'
 
-import { Table, Row } from './sheetdb.mjs'
+import { Table } from './sheetdb.mjs'
 import dbConfig from './config.mjs'
 
 class Stocks extends Table {
@@ -13,7 +13,6 @@ class Stocks extends Table {
       ...dbConfig.options,
       source: dbConfig.id,
       sheet: dbConfig.tables.stocks,
-      row: Stock,
       columns: [
         'ticker',
         'name',
@@ -35,19 +34,15 @@ class Stocks extends Table {
   }
 
   addNew ({ ticker, name }) {
-    this.data.push(
-      new Stock({
-        ticker,
-        name,
-        notes: 'Automatically added',
-        currency: 'GBP',
-        priceFactor: 100
-      })
-    )
+    this.data.push({
+      ticker,
+      name,
+      notes: 'Automatically added',
+      currency: 'GBP',
+      priceFactor: 100
+    })
     this.sort()
   }
 }
-
-class Stock extends Row {}
 
 export default Stocks.instance()

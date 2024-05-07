@@ -1,7 +1,8 @@
 import { toDate, toSerial } from 'googlejs/sheets'
 import sortBy from 'sortby'
+import decimal from 'decimal'
 
-import { Table, Row } from './sheetdb.mjs'
+import { Table } from './sheetdb.mjs'
 import dbConfig from './config.mjs'
 
 class Trades extends Table {
@@ -14,7 +15,6 @@ class Trades extends Table {
       ...dbConfig.options,
       source: dbConfig.id,
       sheet: dbConfig.tables.trades,
-      row: Trade,
       columns: [
         'ticker',
         'account',
@@ -25,93 +25,102 @@ class Trades extends Table {
         'gain',
         'proceeds',
         'notes'
-      ]
+      ],
+      serialize: {
+        date: toSerial,
+        cost: fromDecimal,
+        gain: fromDecimal,
+        proceeds: fromDecimal
+      },
+      deserialize: {
+        date: toDate,
+        cost: toDecimal,
+        gain: toDecimal,
+        proceeds: toDecimal
+      }
     })
-  }
 
-  sort () {
-    const sortFn = sortBy('date')
+    this.sortFunction = sortBy('date')
       .thenBy('who')
       .thenBy('account')
       .thenBy('ticker')
-    this.data = this.data.sort(sortFn)
   }
 
-  save () {
-    this.sort()
-    return super.save()
+  replaceFromSheetTrades (data) {
+    // sheet trades has a "cost" column which is actually:
+    // - cost adjustment for everything other than a sale
+    // - negative proceeds for a sale
+    //
+    this.data = data.map(row => {
+      const { cost: amount, ...rest } = row
+      const cost = toDecimal(amount)
+      const proceeds = rest.qty < 0 && cost ? cost.abs() : undefined
+      const gain = undefined
+      return { ...rest, cost, proceeds, gain }
+    })
+
+    this.recalcGains()
   }
 
-  replace (data) {
-    this.data = data.map(obj => new Trade(obj))
-    this.sort()
-    this.calcGains()
-  }
+  recalcGains () {
+    this.data.sort(this.sortFunction)
+    const prevTrades = []
 
-  calcGains () {
-    this.sort()
-    const positions = new Map()
+    this.data.forEach(trade => {
+      const { ticker, account, who, qty } = trade
+      const key = [ticker, account, who].join(':')
 
-    for (const trade of this.data) {
-      trade.proceeds = undefined
-      if (typeof trade.gain === 'number') {
-        trade.cost = trade.cost - trade.gain
+      // is it a sale?
+      if (qty < 0 && trade.cost) {
+        const myTrades = prevTrades
+          .filter(r => r[0] === key)
+          .map(r => r.slice(1))
+
+        trade.proceeds = decimal(trade.proceeds ?? trade.cost)
+          .withPrecision(2)
+          .abs()
+
+        trade.cost = decimal(qty)
+          .abs()
+          .withPrecision(10)
+          .mul(averageCost(myTrades))
+          .withPrecision(2)
+          .neg()
+
+        trade.gain = trade.proceeds.sub(trade.cost.abs())
+      } else {
         trade.gain = undefined
+        trade.proceeds = undefined
       }
-      const key = trade.positionKey
-      if (!positions.has(key)) {
-        positions.set(key, { qty: 0, cost: 0 })
-      }
-      const pos = positions.get(key)
+      prevTrades.push([key, trade.qty, trade.cost])
+    })
+  }
+}
 
-      if (trade.cost && !trade.qty) {
-        // Adjustment in cost
-        //
-        pos.cost += trade.cost
-      } else if (trade.qty && !trade.cost) {
-        // Adjustment in qty
-        //
-        pos.qty += trade.qty
-      } else if (trade.cost && trade.qty > 0) {
-        // Buy trade
-        //
-        pos.qty += trade.qty
-        pos.cost += trade.cost
-      } else if (trade.cost && trade.qty < 0) {
-        // Sell trade with possible gain/loss
-        //
-        const { qty: prevQty, cost: prevCost } = pos
-        trade.proceeds = Math.abs(trade.cost)
-        pos.qty += trade.qty
-        // what proportion remains?
-        const remain = prevQty ? pos.qty / prevQty : 0
-        // get the new base cost
-        pos.cost = round100(prevCost * remain)
-        // trade cost is the -ve reduction to achieve that
-        trade.cost = pos.cost - prevCost
-        // gain is the proceeds less ABS(cost)
-        trade.gain = trade.proceeds + trade.cost // cost is -ve
-      }
+function averageCost (movements) {
+  if (!movements.length) return 0
+  const zero = decimal('0.00')
+  const pos = { qty: 0, cost: zero }
+
+  for (const [qty, cost] of movements) {
+    if (qty < 0 && cost) {
+      const old = { ...pos }
+      pos.qty -= Math.abs(qty)
+      pos.cost = old.qty ? old.cost.mul(pos.qty / old.qty) : zero
+    } else {
+      if (qty) pos.qty += qty
+      if (cost) pos.cost = pos.cost.add(cost)
     }
   }
+  return pos.qty ? pos.cost.toNumber() / pos.qty : 0
 }
 
-class Trade extends Row {
-  serialize () {
-    return { ...this, date: toSerial(this.date) }
-  }
-
-  deserialize () {
-    return { ...this, date: toDate(this.date) }
-  }
-
-  get positionKey () {
-    return [this.ticker, this.account, this.who].join(':')
-  }
+function toDecimal (n) {
+  return typeof n === 'number' ? decimal(n).withPrecision(2) : n
 }
 
-function round100 (n) {
-  return typeof n === 'number' ? Math.round(100 * n) / 100 : n
+function fromDecimal (n) {
+  return decimal.isDecimal(n) ? Number(n.toString()) : n
 }
 
 export default Trades.instance()

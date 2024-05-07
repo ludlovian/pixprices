@@ -12,7 +12,13 @@ export function rowToObject (row, columns) {
 }
 
 export function objectToRow (obj, columns) {
-  return columns.map(name => (name ? obj[name] : ''))
+  return columns.map(name => {
+    if (!name) return ''
+    if (!(name in obj)) return ''
+    const v = obj[name]
+    if (v == null) return ''
+    return v
+  })
 }
 
 export function removeTrailingEmptyRows (data) {
@@ -24,6 +30,21 @@ export function removeTrailingEmptyRows (data) {
     data.pop()
   }
   return data
+}
+
+export function applyTransforms (xform, obj) {
+  if (!xform) return obj
+  return fromEntries(
+    entries(obj).map(([k, v]) => {
+      const fn = xform[k]
+      return [k, typeof fn === 'function' ? fn(v) : v]
+    })
+  )
+}
+
+export function normaliseArray (arr, length) {
+  const blank = Array.from({ length }, () => '')
+  return arr.map(row => [...row, ...blank].slice(0, length))
 }
 
 function objectMapper (fromValue, toValue) {

@@ -1,7 +1,7 @@
 import { toDate, toSerial } from 'googlejs/sheets'
 import sortBy from 'sortby'
 
-import { Table, Row } from './sheetdb.mjs'
+import { Table } from './sheetdb.mjs'
 import dbConfig from './config.mjs'
 
 class Prices extends Table {
@@ -13,8 +13,9 @@ class Prices extends Table {
     super({
       source: dbConfig.id,
       sheet: dbConfig.tables.prices,
-      row: Price,
       columns: ['ticker', 'name', 'price', 'source', 'updated'],
+      serialize: { updated: toSerial },
+      deserialize: { updated: toDate },
       ...dbConfig.options
     })
   }
@@ -38,7 +39,7 @@ class Prices extends Table {
           count.updated++
         }
       } else {
-        this.data.push(new Price(chg))
+        this.data.push(chg)
         count.updated++
       }
     }
@@ -48,16 +49,6 @@ class Prices extends Table {
   clearOld () {
     const pruneDate = Date.now() - dbConfig.pruneAfter
     this.data = this.data.filter(p => p.updated > pruneDate)
-  }
-}
-
-class Price extends Row {
-  serialize () {
-    return { ...this, updated: toSerial(this.updated) }
-  }
-
-  deserialize () {
-    return { ...this, updated: toDate(this.updated) }
   }
 }
 

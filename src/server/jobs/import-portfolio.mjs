@@ -27,12 +27,12 @@ export default async function importPortfolio (task) {
 
   const newTrades = await importTrades(task)
   if (trades.isStale()) await trades.load()
-  trades.replace(newTrades)
+  trades.replaceFromSheetTrades(newTrades)
   trades.save()
 
   await checkMissingStocks()
 
-  const msg = `Imported ${positions.rowCount} positions and ${trades.rowCount} trades`
+  const msg = `Imported ${positions.data.length} positions and ${trades.data.length} trades`
   debug(msg)
 
   return msg
@@ -93,7 +93,7 @@ async function importTrades (task) {
     .map(row => rowToObject(row, cols))
     .filter(row => !!row.ticker.trim())
     .map(emptyStringToUndef)
-    .map(t => ({ ...t, date: sheets.toDate(t.date) }))
+    .map(trade => ({ ...trade, date: sheets.toDate(trade.date) }))
 
   return data
 }
