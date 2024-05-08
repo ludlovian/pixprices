@@ -1,6 +1,7 @@
 import Debug from '@ludlovian/debug'
 import * as sheets from 'googlejs/sheets'
 import dbConfig from '../db/config.mjs'
+import Cache from '../lib/cache.mjs'
 
 const debug = Debug('pixprices:export-database')
 const { entries } = Object
@@ -54,28 +55,20 @@ async function writeSheet (id, sheet, data) {
 
 function getSizeOf (data) {
   const rows = data.length
-  let cols = 0
-  for (let i = 0; i < rows; i++) {
-    const n = data[i].length
-    if (n > cols) cols = n
-  }
+  const cols = data.reduce((n, row) => Math.max(n, row.length), 0)
   return { rows, cols }
 }
 
 function expandDataTo (data, { rows, cols }) {
-  data = data.map(row => {
-    while (row.length < cols) {
-      row.push('')
-    }
-    return row
-  })
+  const blank = Array.from({ length: cols }, () => '')
+  data = data.map(row => [...row, ...blank].slice(0, cols))
   while (data.length < rows) {
-    data.push(Array.from({ length: cols }, () => ''))
+    data.push([...blank])
   }
   return data
 }
 
-const sheetSizes = new Map()
+const sheetSizes = new Cache()
 async function getSheetSize (id, sheet) {
   const key = `${id}|${sheet}`
   if (sheetSizes.has(key)) return sheetSizes.get(key)

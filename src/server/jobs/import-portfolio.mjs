@@ -15,18 +15,18 @@ const { entries } = Object
 
 export default async function importPortfolio (task) {
   const pos = await importPositionsAndMetrics(task)
-  if (positions.isStale()) await positions.load()
+  await positions.load()
   debug('Imported %d positions', pos.positions.length)
   positions.replace(pos.positions)
   positions.save()
 
-  if (metrics.isStale()) await metrics.load()
+  await metrics.load()
   debug('Imported %d metrics', pos.metrics.length)
   metrics.replace(pos.metrics)
   metrics.save()
 
   const newTrades = await importTrades(task)
-  if (trades.isStale()) await trades.load()
+  await trades.load()
   trades.replaceFromSheetTrades(newTrades)
   trades.save()
 
@@ -99,7 +99,7 @@ async function importTrades (task) {
 }
 
 async function checkMissingStocks () {
-  if (stocks.isStale()) await stocks.load()
+  await stocks.load()
   // find all the tickers in use
   const tickers = new Set(trades.data.map(t => t.ticker))
   // and ignore all the ones we already have
@@ -109,7 +109,7 @@ async function checkMissingStocks () {
   if (!tickers.size) return
 
   // so we need new ones - let's get the names from prices if we have them
-  if (prices.isStale()) await prices.load()
+  await prices.load()
   for (const ticker of tickers) {
     const price = prices.data.find(p => p.ticker === ticker)
     const name = price?.name

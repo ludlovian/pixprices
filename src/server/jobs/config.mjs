@@ -100,6 +100,14 @@ export default [
           id: '1Fxaiw6ZjRCgmamBtE_QqtEhsw2ML2k57xUuEavJBBGY',
           sheet: 'Positions'
         }
+      ],
+
+      vDividends: [
+        {
+          // Portfolio Analysis
+          id: '1Fxaiw6ZjRCgmamBtE_QqtEhsw2ML2k57xUuEavJBBGY',
+          sheet: 'Dividends'
+        }
       ]
     }
   }

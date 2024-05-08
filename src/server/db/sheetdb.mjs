@@ -1,4 +1,3 @@
-import { parse as parseMs } from '@lukeed/ms'
 import Debug from '@ludlovian/debug'
 import * as sheets from 'googlejs/sheets'
 import createSerial from 'pixutil/serial'
@@ -15,10 +14,13 @@ import {
   normaliseArray
 } from './util.mjs'
 
+import Cache from '../lib/cache.mjs'
+
 const serial = createSerial()
 const { assign } = Object
 
 const debug = Debug('pixprices:sheetdb')
+const sheetCellsCache = new Cache()
 
 export class Table {
   // Each table should be an instance of this
@@ -43,18 +45,12 @@ export class Table {
     })
 
     this.data = []
-    this._oldData = []
-    this.lastLoaded = 0
   }
 
-  isStale (period = parseMs('2m')) {
-    return !this.lastLoaded || this.lastLoaded < Date.now() - period
-  }
-
-  async load () {
+  async _loadCells () {
     const n = this.columns.length
     const range = `${this.sheet}!${getRange(2, 1, 9999, n)}`
-    let data = await serial.exec(() =>
+    let cells = await serial.exec(() =>
       sheets.getRange({
         sheet: this.source,
         range,
@@ -62,13 +58,17 @@ export class Table {
         ...this.options
       })
     )
-    if (!data) data = []
+    if (!cells) cells = []
+    return normaliseArray(removeTrailingEmptyRows(cells), n)
+  }
 
-    this.lastLoaded = Date.now()
-    data = normaliseArray(removeTrailingEmptyRows(data), n)
-    this._oldData = clone(data)
+  async load () {
+    const cells = await this._loadCells()
 
-    this.data = data
+    const key = `${this.source}|${this.sheet}`
+    sheetCellsCache.set(key, clone(cells))
+
+    this.data = cells
       .map(row => rowToObject(row, this.columns))
       .map(obj => emptyStringToUndef(obj))
       .map(obj => applyTransforms(this.deserialize, obj))
@@ -78,55 +78,51 @@ export class Table {
           : obj => obj
       )
 
-    debug('Loaded %d rows from %s', data.length, range)
+    debug('Loaded %d rows from %s', cells.length, this.sheet)
     return this.data
   }
 
   async save () {
-    // First we make sure we are not stale
-    if (this.isStale()) {
-      const newData = this.data
-      await this.load()
-      this.data = newData
-    }
+    const key = `${this.source}|${this.sheet}`
+
+    // retrieve the old data, either from cache or by loading
+    const oldCells = sheetCellsCache.get(key) ?? (await this._loadCells())
 
     // convert to POJOs
     // turn POJOs into cells
-    const data = this.data
+    const newCells = this.data
       .map(obj => ({ ...obj }))
       .map(obj => applyTransforms(this.serialize, obj))
       .map(obj => undefToEmptyString(obj))
       .map(obj => objectToRow(obj, this.columns))
 
     // If unchanged, then our work here is done
-    if (equal(data, this._oldData)) {
+    if (equal(newCells, oldCells)) {
       debug('Skipped update of %s - no change', this.sheet)
       return
     }
     const nCols = this.columns.length
     const blank = Array.from({ length: nCols }, () => '')
-    const nRows = this._oldData.length
-    this._oldData = clone(data)
+    sheetCellsCache.set(key, clone(newCells))
 
-    while (data.length < nRows) {
-      data.push([...blank])
+    while (newCells.length < oldCells.length) {
+      newCells.push([...blank])
     }
-    this.lastLoaded = Date.now()
 
-    if (!data.length) return undefined
+    if (!newCells.length) return undefined
 
-    const range = `${this.sheet}!${getRange(2, 1, data.length, nCols)}`
+    const range = `${this.sheet}!${getRange(2, 1, newCells.length, nCols)}`
 
     await serial.exec(() =>
       sheets.updateRange({
         sheet: this.source,
         range,
-        data,
+        data: newCells,
         scopes: sheets.scopes.rw,
         ...this.options
       })
     )
-    debug('Wrote %d rows to %s', data.length, range)
+    debug('Wrote %d rows to %s', this.data.length, this.sheet)
   }
 }
 
