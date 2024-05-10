@@ -21,6 +21,6 @@ export default {
 
   options: sheetsOptions,
 
-  pruneAfter: parseMs('7d'),
+  pruneAfter: parseMs('30d'),
   recentUpdate: parseMs('1h')
 }
