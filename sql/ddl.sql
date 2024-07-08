@@ -155,7 +155,7 @@ CREATE VIEW IF NOT EXISTS vStock AS
           c.dividend * a.priceFactor / b.price AS yield
   FROM  Stock a
   JOIN  Price b USING (ticker)
-  JOIN  Metric c USING (ticker);
+  LEFT JOIN  Metric c USING (ticker);
 
 ----------------------------------------------------------------
 -- vPosition
@@ -186,6 +186,73 @@ CREATE VIEW IF NOT EXISTS vPosition AS
   FROM Position a
   JOIN vStock b USING (ticker)
   JOIN cteCost c USING (ticker, account, who);
+
+----------------------------------------------------------------
+-- vDividends
+--
+-- All monetary values are in pennies
+--
+----------------------------------------------------------------
+
+CREATE VIEW IF NOT EXISTS vDividend AS
+  SELECT
+    a.date,
+    b.ticker,
+    b.account,
+    b.who,
+    CAST(100 * a.dividend * b.qty AS INTEGER) AS dividend
+  FROM Dividend a
+  JOIN Position b USING (ticker);
+
+----------------------------------------------------------------
+-- vErrors
+--
+
+CREATE VIEW IF NOT EXISTS vErrors (code, message) AS
+  WITH
+  cteTradePos AS (
+    SELECT ticker, account, who,
+           SUM(qty) AS pos
+    FROM Trade
+    GROUP BY ticker, account, who
+    HAVING pos != 0
+  ),
+  cteCurrentStock AS (
+    SELECT ticker FROM cteTradePos
+    UNION
+    SELECT ticker FROM Position
+  )
+  SELECT a.ticker,
+         'Stock has been traded but no record in Stock'
+  FROM Trade a
+  LEFT JOIN Stock b USING (ticker)
+  WHERE b.ticker IS NULL
+UNION ALL
+  SELECT a.ticker,
+         'No price at all for stock'
+  FROM cteCurrentStock a
+  LEFT JOIN Price b USING (ticker)
+  WHERE b.ticker IS NULL
+UNION ALL
+  SELECT a.ticker,
+         'No recent price for stock'
+  FROM cteCurrentStock a
+  JOIN Price b USING (ticker)
+  WHERE b.updated < date('now','-5 days')
+UNION ALL
+  SELECT a.ticker || ':' || a.account || ':' || a.who,
+         'Position does not match trades'
+  FROM Position a
+  LEFT JOIN cteTradePos b USING (ticker, account, who)
+  WHERE a.qty IS NOT b.pos
+UNION ALL
+  SELECT a.ticker || ':' || a.account || ':' || a.who,
+         'Position does not match trades'
+  FROM cteTradePos a
+  LEFT JOIN Position b USING (ticker, account, who)
+  WHERE b.qty IS NULL;
+
+----------------------------------------------------------------
 
 COMMIT;
 VACUUM;
