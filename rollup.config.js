@@ -23,7 +23,7 @@ export default [
       format: 'es',
       sourcemap: dev
     },
-    external: ['@googleapis/sheets'],
+    external: ['@googleapis/sheets', 'better-sqlite3'],
     plugins: [
       commonjs(),
       nodeResolve(),
@@ -46,6 +46,7 @@ export default [
       copy({
         targets: [
           { src: 'src/client/*.html', dest: 'dist/public' },
+          { src: 'src/client/inject.mjs', dest: 'dist/public' },
           { src: 'src/client/bootstrap.min.*', dest: 'dist/public' }
         ]
       }),

@@ -1,8 +1,10 @@
 /** @jsx h */
 import { h, Fragment } from 'preact'
+import { useModel } from './use.mjs'
 import TimeSince from './TimeSince.mjs'
 
-export default function ServerStatus ({ model }) {
+export default function ServerStatus () {
+  const model = useModel()
   if (!model.version) return null
   return (
     <Fragment>

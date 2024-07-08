@@ -1,38 +1,22 @@
-import extractPrices from './lse-fetch-prices.mjs'
-import extractDividends from './fetch-dividends.mjs'
-import importPortfolio from './import-portfolio.mjs'
-import exportDatabase from './export-database.mjs'
+import LseIndexPrices from './lse-index-prices.mjs'
+import LseSharePrice from './lse-share-price.mjs'
+import FetchDividends from './fetch-dividends.mjs'
+import ImportPortfolio from './import-portfolio.mjs'
+import jobs from './config.mjs'
 
-export function startTask (task) {
-  switch (task.type) {
-    case 'lse-prices':
-      return task.url
+function createJob (schedule, data) {
+  switch (data.type) {
+    case 'lse-index':
+      return new LseIndexPrices(schedule, data)
+    case 'lse-share':
+      return new LseSharePrice(schedule, data)
     case 'dividends':
-      return task.url
-    case 'import-portfolio':
-      importPortfolio(task).then(
-        msg => task.complete(msg),
-        err => task.fail(err.message)
-      )
-      return '/?role=worker'
-    case 'export-database':
-      exportDatabase(task).then(
-        msg => task.complete(msg),
-        err => task.fail(err.message)
-      )
-      return '/?role=worker'
-    default:
-      throw new Error(`No such task type: ${task.type}`)
+      return new FetchDividends(schedule, data)
+    case 'import':
+      return new ImportPortfolio(schedule, data)
   }
 }
 
-export function completeTask (task, data) {
-  switch (task.type) {
-    case 'lse-prices':
-      return extractPrices(task, data.body)
-    case 'dividends':
-      return extractDividends(task, data.body)
-    default:
-      throw new Error(`No such task type: ${task.type}`)
-  }
+export function createJobs (schedule) {
+  return jobs.map(data => createJob(schedule, data))
 }

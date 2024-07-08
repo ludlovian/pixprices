@@ -1,26 +1,24 @@
-import sirv from 'sirv'
-
+import _staticFile from '@ludlovian/static'
 import Debug from '@ludlovian/debug'
-
-import { origin as serverOrigin, allowedOrigins, isDev } from './config.mjs'
+import config from './config.mjs'
 
 const logger = Debug('pixprices*')
 
-export const staticFiles = path =>
-  sirv(path, {
-    dev: isDev,
-    gzip: !isDev,
-    etag: !isDev
+export const staticFiles = (path, except) =>
+  _staticFile.serveFiles(path, {
+    single: '/index.html',
+    filter: path => except.some(e => path.startsWith(e))
   })
+staticFiles.reset = () => _staticFile.cache.reset()
 
 export function cors (req, res, next) {
   const { origin } = req.headers
-  if (!origin || origin === serverOrigin) return next()
+  if (!origin || origin === config.origin) return next()
   if (['GET', 'HEAD'].includes(req.method)) {
     res.setHeader('Access-Control-Allow-Origin', '*')
     return next()
   }
-  if (!allowedOrigins.includes(origin)) {
+  if (!config.allowedOrigins.includes(origin)) {
     return res.writeHead(403).end()
   }
   res.setHeader('Access-Control-Allow-Origin', origin)

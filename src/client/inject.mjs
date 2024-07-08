@@ -1,19 +1,9 @@
 ;(async () => {
-  const server = '{{SERVER_ORIGIN}}'
-  const { location } = window
+  const { server, id } = getHash()
+  if (!server || !id) return
   console.log('PixPrices js injected.')
 
-  const tm = setTimeout(exit, 15 * 60 * 1000)
-
-  const state = await fetch(`${server}/api/status/inject`).then(res =>
-    res.json()
-  )
-
-  if (location.href !== state.url) {
-    console.log(`Not on ${state.url}\nSkipping.`)
-    clearTimeout(tm)
-    return
-  }
+  setTimeout(exit, 15 * 60 * 1000)
 
   main()
 
@@ -25,12 +15,6 @@
     const body = document.body.outerHTML
     window.stop()
     await postBody({ body })
-
-    if (state.isTest) {
-      console.log('Data posted. Waiting to return.')
-      await new Promise(resolve => setTimeout(resolve, 10 * 1000))
-    }
-
     exit()
   }
 
@@ -49,16 +33,23 @@
 
   async function postBody (data) {
     console.log(data)
-    const { id } = state
     const url = `${server}/api/task/${id}`
     const body = JSON.stringify(data)
     const method = 'POST'
 
-    const res = await fetch(url, { method, body }).then(res => res.json())
+    const res = await fetch(url, { method, body })
     if (!res.ok) throw new Error('POST failed')
   }
 
   function exit () {
-    location.replace(`${server}/?role=worker`)
+    window.location.replace(`${server}/?role=worker`)
+  }
+
+  function getHash () {
+    return Object.fromEntries(
+      decodeURIComponent((window.location.hash ?? '').slice(1))
+        .split('&')
+        .map(kv => kv.split('='))
+    )
   }
 })()

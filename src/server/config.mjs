@@ -1,42 +1,41 @@
 import os from 'node:os'
-import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import configure from '@ludlovian/configure'
 
-import { parse as parseMs } from '@lukeed/ms'
+export default configure('PIXPRICES_', {
+  isDev: process.env.NODE_ENV !== 'production',
 
-// are we running in dev or production
-export const isDev = process.env.NODE_ENV !== 'production'
+  // client path files
+  clientPath: resolve('dist/public'),
 
-// Where are the client files
-export const clientPath = './dist/public'
+  // server details
+  hostname: os.hostname(),
+  serverPort: 5234,
+  fullHostname: c => `${c.hostname}.pix.uk.to`,
+  origin: c => `https://${c.fullHostname}:${c.serverPort}`,
+  sslCredsDir: 'creds',
 
-// Name of the server
-export const hostname = os.hostname()
-export const fqdn = hostname + '.pix.uk.to'
+  // permitted clients
+  allowedOrigins: ['https://www.lse.co.uk', 'https://www.dividenddata.co.uk'],
 
-// Settings for the HTTP server
-export const serverPort = 5234
-export const serverSSL = {
-  key: readFileSync(`creds/${fqdn}.key`),
-  cert: readFileSync(`creds/${fqdn}.crt`)
-}
+  // SSE heartbeat
+  heartbeatPeriod: '30s',
 
-// Server origin
-export const origin = `https://${hostname}.pix.uk.to:${serverPort}`
+  // task management
+  taskTimeout: '5m',
+  taskHistoryLength: 20,
 
-// Client settings
-export const allowedOrigins = [
-  'https://www.lse.co.uk',
-  'https://www.dividenddata.co.uk'
-]
+  // Database sheet
+  spreadsheetId: c =>
+    c.isDev
+      ? '11py3fCC326GoQBbBIQpaqdLswk-C4MD059sB8z97044'
+      : '1mmND8-BbQ6ld3TViPVSv_cxUiE8H4VRR9KRb61gPiGs',
 
-// Task settings
+  // Price configs
+  recentPriceUpdate: '60m',
+  prunePriceAfter: '30d',
 
-export const taskHistoryLength = 20
-export const taskTimeout = parseMs('5m')
-export const taskLookback = parseMs('1d')
-
-// Price store
-
-export const sheetsOptions = {
-  credentials: 'creds/credentials.json'
-}
+  // SQLite database
+  portfolioDB: resolve('db/portfolio.db'),
+  auditDB: resolve('db/audit.db')
+})

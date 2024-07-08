@@ -4,7 +4,7 @@ import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 import { parse } from '@lukeed/ms'
 import fromNow from 'fromnow'
-import Timer from 'timer'
+import Timer from '@ludlovian/timer'
 
 export default function Countdown (props) {
   const $out = useSignal(null)
@@ -16,17 +16,16 @@ function startTimer ($sig, opts) {
   let { target, freq = '1s' } = opts
   target = new Date(target).getTime()
   freq = typeof freq === 'string' ? parse(freq) : freq
-  const tm = new Timer({
-    every: freq,
-    fn: () => {
-      const ms = Math.max(0, target - Date.now())
-      $sig.value =
-        ms > 60e3 ? fromNow(target) : fmtDuration(Math.floor(ms / 1e3))
-      if (!ms) tm.cancel()
-    }
-  })
-  tm.fire()
+  const tm = new Timer({ ms: freq, repeat: true, fn: tick })
+  tick()
+
   return () => tm.cancel()
+
+  function tick () {
+    const ms = Math.max(0, target - Date.now())
+    $sig.value = ms > 60e3 ? fromNow(target) : fmtDuration(Math.floor(ms / 1e3))
+    if (!ms) tm.cancel()
+  }
 }
 
 function fmtDuration (secs) {

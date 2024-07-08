@@ -4,7 +4,7 @@ import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 import fromNow from 'fromnow'
 import { parse } from '@lukeed/ms'
-import Timer from 'timer'
+import Timer from '@ludlovian/timer'
 
 export default function TimeSince (props) {
   const $out = useSignal(null)
@@ -14,9 +14,14 @@ export default function TimeSince (props) {
 
 function startTimer ($sig, opts) {
   const { since, freq = '10s', suffix = true } = opts
-  const tm = new Timer({
-    every: typeof freq === 'string' ? parse(freq) : freq,
-    fn: () => ($sig.value = fromNow(since, { suffix }))
-  }).fire()
+  const ms = typeof freq === 'string' ? parse(freq) : freq
+
+  const tm = new Timer({ ms, repeat: true, fn: tick })
+  tick()
+
   return () => tm.cancel()
+
+  function tick () {
+    $sig.value = fromNow(since, { suffix })
+  }
 }

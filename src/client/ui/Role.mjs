@@ -1,7 +1,9 @@
 /** @jsx h */
 import { h, Fragment } from 'preact'
+import { useModel } from './use.mjs'
 
-export default function Role ({ model }) {
+export default function Role () {
+  const model = useModel()
   if (!model.isWorker) return null
   return (
     <Fragment>
