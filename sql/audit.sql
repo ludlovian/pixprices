@@ -9,17 +9,15 @@ BEGIN TRANSACTION;
 --
 -- UPDATE BOTH LINES WHEN SCHEMA CHANGES
 --
-CREATE TABLE IF NOT EXISTS audit._Schema (
+CREATE TABLE IF NOT EXISTS _Schema (
   id INTEGER PRIMARY KEY CHECK (id = 0),
   version INTEGER NOT NULL);
-INSERT OR IGNORE INTO audit._Schema VALUES (0, 1);
-CREATE VIEW IF NOT EXISTS audit._vSchema (valid) AS
-  SELECT version = 1 FROM  _Schema;
+INSERT OR REPLACE INTO _Schema VALUES (0, 2);
 
 ----------------------------------------------------------------
 -- Stock
 
-CREATE TABLE IF NOT EXISTS audit.Stock(
+CREATE TABLE IF NOT EXISTS Stock(
   ticker      TEXT NOT NULL,
   name        TEXT,
   incomeType  TEXT,
@@ -29,27 +27,13 @@ CREATE TABLE IF NOT EXISTS audit.Stock(
   updated     TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS audit.Stock_ix_1
+CREATE INDEX IF NOT EXISTS Stock_ix_1
   ON Stock (ticker);
-
-----------------------------------------------------------------
--- Price
-
-CREATE TABLE IF NOT EXISTS audit.Price(
-  ticker    TEXT NOT NULL,
-  name      TEXT,
-  price     NUMBER,
-  source    TEXT,
-  updated   TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS audit.Price_ix_1
-  ON Price (ticker);
 
 ----------------------------------------------------------------
 -- Metric
 
-CREATE TABLE IF NOT EXISTS audit.Metric(
+CREATE TABLE IF NOT EXISTS Metric(
   ticker    TEXT NOT NULL,
   dividend  NUMBER,
   nav       NUMBER,
@@ -57,13 +41,13 @@ CREATE TABLE IF NOT EXISTS audit.Metric(
   updated   TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS audit.Metric_ix_1
+CREATE INDEX IF NOT EXISTS Metric_ix_1
   ON Metric (ticker);
 
 ----------------------------------------------------------------
 -- Dividend
 
-CREATE TABLE IF NOT EXISTS audit.Dividend(
+CREATE TABLE IF NOT EXISTS Dividend(
   date      TEXT NOT NULL,
   ticker    TEXT NOT NULL,
   dividend  NUMBER,
@@ -74,13 +58,13 @@ CREATE TABLE IF NOT EXISTS audit.Dividend(
   updated   TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS audit.Dividend_ix_1
+CREATE INDEX IF NOT EXISTS Dividend_ix_1
   ON Dividend (ticker, date);
 
 ----------------------------------------------------------------
 -- Position
 
-CREATE TABLE IF NOT EXISTS audit.Position(
+CREATE TABLE IF NOT EXISTS Position(
   ticker      TEXT NOT NULL,
   account     TEXT NOT NULL,
   who         TEXT NOT NULL,
@@ -88,13 +72,13 @@ CREATE TABLE IF NOT EXISTS audit.Position(
   updated     TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS audit.Position_ix_1
+CREATE INDEX IF NOT EXISTS Position_ix_1
   ON Position (ticker, account, who);
 
 ----------------------------------------------------------------
 -- Trade
 
-CREATE TABLE IF NOT EXISTS audit.Trade(
+CREATE TABLE IF NOT EXISTS Trade(
   ticker      TEXT NOT NULL,
   account     TEXT NOT NULL,
   who         TEXT NOT NULL,
@@ -108,11 +92,10 @@ CREATE TABLE IF NOT EXISTS audit.Trade(
   updated     TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS audit.Trade_ix_1
+CREATE INDEX IF NOT EXISTS Trade_ix_1
   ON Trade (ticker, account, who, date, seq);
 
 ----------------------------------------------------------------
 COMMIT;
-VACUUM audit;
 
 -- vim: ts=2:sts=2:sw=2:et

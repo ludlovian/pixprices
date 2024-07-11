@@ -19,15 +19,12 @@ BEGIN TRANSACTION;
 ----------------------------------------------------------------
 -- Holds the schema number
 --
--- UPDATE BOTH LINES WHEN SCHEMA CHANGES
 --
 CREATE TABLE IF NOT EXISTS _Schema (
   id INTEGER PRIMARY KEY NOT NULL check (id = 0),
   version INTEGER NOT NULL
 );
-INSERT OR IGNORE INTO _Schema VALUES(0, 2);
-CREATE VIEW IF NOT EXISTS _vSchema (valid) AS
-  SELECT version = 2 FROM  _Schema;
+INSERT OR REPLACE INTO _Schema VALUES(0, 3);
 
 ----------------------------------------------------------------
 --
@@ -82,13 +79,10 @@ CREATE TABLE IF NOT EXISTS Metric (
 --
 -- Holds a dividend payment for a stock
 --
--- NB
---   Key is ticker, date but the first two cols are the other
---   way around!
 
 CREATE TABLE IF NOT EXISTS Dividend (
-  date        TEXT NOT NULL,
   ticker      TEXT NOT NULL,
+  date        TEXT NOT NULL,
   dividend    NUMBER NOT NULL,
   currency    TEXT,
   exdiv       TEXT,
@@ -97,6 +91,7 @@ CREATE TABLE IF NOT EXISTS Dividend (
   updated     TEXT NOT NULL,
   PRIMARY KEY (ticker, date)
 );
+CREATE INDEX IF NOT EXISTS Dividend_ix_1 ON Dividend(date, ticker);
 
 ----------------------------------------------------------------
 -- Position
@@ -141,11 +136,11 @@ CREATE TABLE IF NOT EXISTS Trade (
 ----------------------------------------------------------------
 
 ----------------------------------------------------------------
--- vStock
+-- viewStock
 --
 -- Useful data about a stock
 
-CREATE VIEW IF NOT EXISTS vStock AS
+CREATE VIEW IF NOT EXISTS viewStock AS
   SELECT  a.ticker,
           a.name,
           a.incomeType,
@@ -158,7 +153,7 @@ CREATE VIEW IF NOT EXISTS vStock AS
   LEFT JOIN  Metric c USING (ticker);
 
 ----------------------------------------------------------------
--- vPosition
+-- viewPosition
 --
 -- All values are in pennies
 --  - prices and dps are floating
@@ -166,7 +161,7 @@ CREATE VIEW IF NOT EXISTS vStock AS
 --
 ----------------------------------------------------------------
 
-CREATE VIEW IF NOT EXISTS vPosition AS
+CREATE VIEW IF NOT EXISTS viewPosition AS
   WITH cteCost AS (
     SELECT ticker, account, who,
            SUM(cost) AS cost
@@ -184,17 +179,17 @@ CREATE VIEW IF NOT EXISTS vPosition AS
     c.cost AS cost,
     CAST(a.qty * b.price - c.cost AS INTEGER) AS gain
   FROM Position a
-  JOIN vStock b USING (ticker)
+  JOIN viewStock b USING (ticker)
   JOIN cteCost c USING (ticker, account, who);
 
 ----------------------------------------------------------------
--- vDividends
+-- viewDividend
 --
 -- All monetary values are in pennies
 --
 ----------------------------------------------------------------
 
-CREATE VIEW IF NOT EXISTS vDividend AS
+CREATE VIEW IF NOT EXISTS viewDividend AS
   SELECT
     a.date,
     b.ticker,
@@ -202,13 +197,14 @@ CREATE VIEW IF NOT EXISTS vDividend AS
     b.who,
     CAST(100 * a.dividend * b.qty AS INTEGER) AS dividend
   FROM Dividend a
-  JOIN Position b USING (ticker);
+  JOIN Position b USING (ticker)
+  ORDER BY date, ticker;
 
 ----------------------------------------------------------------
--- vErrors
+-- viewError
 --
 
-CREATE VIEW IF NOT EXISTS vErrors (code, message) AS
+CREATE VIEW IF NOT EXISTS viewError (code, message) AS
   WITH
   cteTradePos AS (
     SELECT ticker, account, who,

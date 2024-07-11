@@ -1,9 +1,0 @@
-#!/bin/bash
-DIR=${0%/*}
-## Minimise SQL
-cat $DIR/ddl.sql $DIR/temp.ddl.sql $DIR/audit.ddl.sql | \
-    $DIR/minsql.mjs \
-    > $DIR/ddl.min.sql
-## Make importable DDL
-SQL=$(sed 's/"/\\"/g' <$DIR/ddl.min.sql)
-echo 'export default "'"$SQL"'"' >$DIR/../src/server/db/ddl.mjs

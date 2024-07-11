@@ -11,7 +11,7 @@
     "format": "prettier-standard 'src/**/*.{mjs,js}'",
     "lint": "standard 'src/**/*.{mjs,js}' | snazzy",
     "build": "npm run build:sql && rollup -c",
-    "build:sql": "bash sql/make-sql",
+    "build:sql": "for f in sql/*;do n=${f##*/};j=${n%sql}mjs;sql2mjs $f src/server/db/sql/$j;done",
     "build:dev": "npm run build",
     "build:prod": "NODE_ENV=production npm run build",
     "start:dev": "npm run build:dev && npm run start",
@@ -34,6 +34,7 @@
     "@ludlovian/sheetdb": "github:ludlovian/sheetdb",
     "@ludlovian/signalbox": "github:ludlovian/signalbox",
     "@ludlovian/sortby": "github:ludlovian/sortby",
+    "@ludlovian/sqlite": "github:ludlovian/sqlite",
     "@ludlovian/static": "github:ludlovian/static",
     "@ludlovian/subscribe-signal": "github:ludlovian/subscribe-signal",
     "@ludlovian/timer": "github:ludlovian/timer",
@@ -54,7 +55,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "babel-preset-preact": "^2.0.0",
     "flattie": "^1.1.1",
-    "rollup": "^4.18.0",
+    "rollup": "^4.18.1",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-gzip": "^3.1.2"
   }

@@ -8,29 +8,34 @@ export function createDB () {
     .addTable('stocks', {
       name: 'Stocks',
       cols: 'ticker,name,incomeType,notes,currency,priceFactor:number',
-      sort: 'ticker'
+      sort: 'ticker',
+      unique: 'ticker'
     })
     .addTable('prices', {
       name: 'Prices',
       cols: 'ticker,name,price:number,source,updated:date',
-      sort: 'ticker'
+      sort: 'ticker',
+      unique: 'ticker'
     })
     .addTable('metrics', {
       name: 'Metrics',
       cols: 'ticker,dividend:number,nav:number,eps:number',
-      sort: 'ticker'
+      sort: 'ticker',
+      unique: 'ticker'
     })
     .addTable('dividends', {
       name: 'Dividends',
       cols:
         'date:date,ticker,dividend:number,currency,' +
         'exdiv:date,declared:date,source,updated:date',
-      sort: 'date,ticker'
+      sort: 'date,ticker',
+      unique: 'date,ticker'
     })
     .addTable('positions', {
       name: 'Positions',
       cols: 'ticker,account,who,qty:number',
-      sort: 'ticker,account,who'
+      sort: 'ticker,account,who',
+      unique: 'ticker,account,who'
     })
     .addTable('trades', {
       name: 'Trades',
