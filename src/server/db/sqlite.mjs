@@ -1,4 +1,3 @@
-import process from 'node:process'
 import tinydate from 'tinydate'
 import Debug from '@ludlovian/debug'
 import Database from '@ludlovian/sqlite'
