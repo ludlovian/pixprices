@@ -3,4 +3,4 @@ creds.tgz
 src/client/inject.js
 node_modules/
 dist/
-db/
+*.db
