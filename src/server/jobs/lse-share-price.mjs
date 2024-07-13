@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import Debug from '@ludlovian/debug'
 import Parsley from '@ludlovian/parsley'
 import Job from '../model/job.mjs'
-import database from '../db/index.mjs'
+import { sheetdb } from '../db/index.mjs'
 
 const debug = Debug('pixprices:lse-prices')
 const XX = false
@@ -34,7 +34,7 @@ export default class LseSharePrice extends Job {
 
   async receiveData (task, { body: xml }) {
     if (XX && debug.enabled) writeFileSync('received.xml', xml)
-    const { prices } = database.tables
+    const { prices } = sheetdb.tables
     const updated = new Date()
     const { source, ticker, name } = this
 
@@ -58,12 +58,8 @@ export default class LseSharePrice extends Job {
     if (isNaN(price)) throw new Error(`Price "${valText}" is not a number`)
 
     await prices.load()
-    const row = prices.data.find(r => r.ticker === ticker)
-    if (row) {
-      Object.assign(row, { price, name, source, updated })
-    } else {
-      prices.data.push({ ticker, name, price, source, updated })
-    }
+    const row = prices.get({ ticker })
+    row.set({ price, name, source, updated })
 
     await prices.save()
     const message = `Fetched price for ${ticker}`

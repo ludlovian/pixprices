@@ -1,7 +1,7 @@
 import Debug from '@ludlovian/debug'
 import Parsley from '@ludlovian/parsley'
 import Job from '../model/job.mjs'
-import database from '../db/index.mjs'
+import { sheetdb } from '../db/index.mjs'
 
 const debug = Debug('pixprices:fetch-dividends')
 
@@ -14,7 +14,7 @@ export default class FetchDividends extends Job {
   }
 
   async receiveData (task, { body: xml }) {
-    const { dividends } = database.tables
+    const { dividends } = sheetdb.tables
     const { source } = this
 
     const body = Parsley.from(xml, { loose: true })
@@ -51,8 +51,8 @@ export default class FetchDividends extends Job {
     debug('Have parsed %d divs', newDivs.length)
 
     await dividends.load()
-    const count = applyDivs(dividends.data, newDivs)
-    await dividends.save(clearOld(dividends.data))
+    const count = applyDivs(dividends, newDivs)
+    await dividends.save()
 
     const message = `Updated ${count.updated} and added ${count.added} dividends`
 
@@ -61,28 +61,24 @@ export default class FetchDividends extends Job {
   }
 }
 
-function applyDivs (divs, changes) {
-  const count = { updated: 0, added: 0 }
-  for (const change of changes) {
-    const row = divs.find(
-      d => +d.date === +change.date && d.ticker === change.ticker
-    )
-    if (row) {
-      Object.assign(row, change)
-      count.updated++
-    } else {
-      divs.push(change)
-      count.added++
-    }
-  }
-  return count
-}
-
 const months18 = 18 * 30 * 24 * 60 * 60 * 1000
 
-function clearOld (divs) {
+function applyDivs (dividends, changes) {
   const then = Date.now() - months18
-  return divs.filter(d => d.updated > then)
+  for (const chg of changes) {
+    const { ticker, date, dividend, currency } = chg
+    const { exdiv, declared, source, updated } = chg
+    const row = dividends.get({ date, ticker })
+    row.set({ dividend, currency, exdiv, declared, source, updated })
+  }
+
+  dividends.data.forEach(row => {
+    if (row.updated < then) row.delete()
+  })
+
+  const updated = dividends.rows.changed.size
+  const added = dividends.rows.added.size
+  return { updated, added }
 }
 
 function cleanTicker (ticker) {

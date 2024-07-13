@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import Debug from '@ludlovian/debug'
 import Parsley from '@ludlovian/parsley'
 import Job from '../model/job.mjs'
-import database from '../db/index.mjs'
+import { sheetdb } from '../db/index.mjs'
 import config from '../config.mjs'
 
 const debug = Debug('pixprices:lse-prices')
@@ -29,7 +29,7 @@ export default class LseIndexPrices extends Job {
 
   async receiveData (task, { body: xml }) {
     if (XX) writeFileSync('received.xml', xml)
-    const { prices } = database.tables
+    const { prices } = sheetdb.tables
     const updated = new Date()
     const source = this.source
 
@@ -58,9 +58,9 @@ export default class LseIndexPrices extends Job {
     debug('Have parsed %d changes', changes.length)
 
     await prices.load()
-    const count = applyPrices(prices.data, changes)
+    const count = applyPrices(prices, changes)
 
-    await prices.save(clearOld(prices.data))
+    await prices.save()
     const message = `Updated ${count.updated} skipped ${count.skipped} from ${task.job.name}`
 
     debug(message)
@@ -70,28 +70,23 @@ export default class LseIndexPrices extends Job {
 
 function applyPrices (prices, changes) {
   const recent = Date.now() - config.recentPriceUpdate
-  const count = { updated: 0, skipped: 0 }
+  const then = Date.now() - config.prunePriceAfter
 
   for (const chg of changes) {
-    const price = prices.find(p => p.ticker === chg.ticker)
-    if (price) {
-      if (price.updated > recent) {
-        count.skipped++
-      } else {
-        Object.assign(price, chg)
-        count.updated++
-      }
-    } else {
-      prices.push(chg)
-      count.updated++
+    const { ticker, name, price, source, updated } = chg
+    const row = prices.get({ ticker })
+    if (row.updated < recent) {
+      row.set({ name, price, source, updated })
     }
   }
-  return count
-}
 
-function clearOld (prices) {
-  const then = Date.now() - config.prunePriceAfter
-  return prices.filter(p => +p.updated > then)
+  for (const row of prices.data) {
+    if (row.updated < then) row.delete()
+  }
+
+  const updated = prices.rows.added.size + prices.rows.changed.size
+  const skipped = changes.length - updated
+  return { updated, skipped }
 }
 
 const rgxNameAndTicker = /^(.*) \((\w+)\.*\)$/
