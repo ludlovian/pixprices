@@ -2,11 +2,15 @@ import { writeFileSync } from 'node:fs'
 import Debug from '@ludlovian/debug'
 import Parsley from '@ludlovian/parsley'
 import Job from '../model/job.mjs'
-import { sheetdb } from '../db/index.mjs'
+import { db } from '../db/index.mjs'
 import config from '../config.mjs'
 
 const debug = Debug('pixprices:lse-prices')
 const XX = false
+
+const TABLE_CLASS = 'sp-constituents__table'
+const RX_NAME_TICKER = /^(?<name>.*) \((?<ticker>\w+)\.*\)$/
+const RX_PRICE = /^(?<price>[\d.,]+)$/
 
 export default class LseIndexPrices extends Job {
   #url = 'https://www.lse.co.uk/share-prices/{{INDEX}}/constituents.html'
@@ -29,8 +33,6 @@ export default class LseIndexPrices extends Job {
 
   async receiveData (task, { body: xml }) {
     if (XX) writeFileSync('received.xml', xml)
-    const { prices } = sheetdb.tables
-    const updated = new Date()
     const source = this.source
 
     const body = Parsley.from(xml, { loose: true })
@@ -40,64 +42,63 @@ export default class LseIndexPrices extends Job {
       ({ type, attr }) =>
         type === 'table' &&
         attr.class &&
-        attr.class.split(' ').includes('sp-constituents__table')
+        attr.class.split(' ').includes(TABLE_CLASS)
     )
     if (!table) throw new Error('Could not find table')
 
     const changes = table
       .findAll('tr')
-      .map(row => row.findAll('td').map(td => td.textAll.join('').trim()))
-      .map(([nameAndTicker, priceString]) => ({
-        ...parseNameAndTicker(nameAndTicker),
-        price: parsePrice(priceString),
-        source,
-        updated
+      .map(
+        // for each row of the table
+        row =>
+          row
+            // we find each cell
+            .findAll('td')
+            .map(
+              // and grab, combine & trim the text
+              td => td.textAll.join('').trim()
+            )
+      )
+      // Then we parse the texts into object properties
+      .map(cols => ({
+        ...parse(cols[0], RX_NAME_TICKER),
+        ...parse(cols[1], RX_PRICE),
+        source
       }))
-      .filter(p => p.name && p.ticker && p.price != null)
+      // Only where we've got stuff
+      .filter(p => p.name && p.ticker && p.price !== undefined)
+      .map(({ price, ...rest }) => ({
+        ...rest,
+        // Convert price from string to number
+        price: +price.replaceAll(',', '')
+      }))
 
     debug('Have parsed %d changes', changes.length)
 
-    await prices.load()
-    const count = applyPrices(prices, changes)
+    applyPrices(changes)
 
-    await prices.save()
-    const message = `Updated ${count.updated} skipped ${count.skipped} from ${task.job.name}`
+    const message = `Read ${changes.length} prices from ${task.job.name}`
 
     debug(message)
     task.completeTask(message)
   }
 }
 
-function applyPrices (prices, changes) {
-  const recent = Date.now() - config.recentPriceUpdate
-  const then = Date.now() - config.prunePriceAfter
+function applyPrices (changes) {
+  db.transaction(() => {
+    const recent = config.recentPriceUpdate
 
-  for (const chg of changes) {
-    const { ticker, name, price, source, updated } = chg
-    const row = prices.get({ ticker })
-    if (row.updated < recent) {
-      row.set({ name, price, source, updated })
+    for (const chg of changes) {
+      const { ticker, name, price, source } = chg
+      db.run('addPrice', { ticker, name, price, source, recent })
     }
-  }
 
-  for (const row of prices.data) {
-    if (row.updated < then) row.delete()
-  }
-
-  const updated = prices.rows.added.size + prices.rows.changed.size
-  const skipped = changes.length - updated
-  return { updated, skipped }
+    const period = config.prunePriceAfter
+    db.run('prunePrice', { period })
+  })
 }
 
-const rgxNameAndTicker = /^(.*) \((\w+)\.*\)$/
-function parseNameAndTicker (nameAndTicker) {
-  if (!nameAndTicker) return {}
-  const m = rgxNameAndTicker.exec(nameAndTicker)
-  return m ? { name: m[1], ticker: m[2] } : {}
-}
-
-const rgxPrice = /^[\d.,]+$/
-function parsePrice (priceString) {
-  if (!priceString || !rgxPrice.test(priceString)) return null
-  return Number(priceString.replaceAll(',', ''))
+function parse (data, rgx) {
+  const match = rgx.exec(data)
+  return match ? match.groups : {}
 }

@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS Stock (
 CREATE TABLE IF NOT EXISTS Price (
   ticker      TEXT PRIMARY KEY NOT NULL,
   price       REAL,
+  name        TEXT,
   source      TEXT,
   updated     REAL NOT NULL
 );
@@ -109,7 +110,7 @@ CREATE TABLE IF NOT EXISTS Position (
 --
 
 CREATE TABLE IF NOT EXISTS Trade (
-  id          INTEGER PRIMARY KEY NOT NULL,
+  tradeId     INTEGER PRIMARY KEY NOT NULL,
   ticker      TEXT NOT NULL,
   account     TEXT NOT NULL,
   who         TEXT NOT NULL,
@@ -129,6 +130,106 @@ CREATE INDEX IF NOT EXISTS Trade_ix_1 ON Trade(ticker, account, who, date);
 -- Views
 --
 ----------------------------------------------------------------
+
+----------------------------------------------------------------
+--
+-- Export Views
+--
+----------------------------------------------------------------
+
+--
+-- vStock
+--
+
+CREATE VIEW IF NOT EXISTS vStock AS
+  SELECT
+    a.ticker,
+    a.incomeType,
+    a.name,
+    b.price,
+    c.dividend,
+    julianday(b.updated, 'localtime') -
+      julianday('1899-12-30 00:00:00') AS updated
+
+  FROM
+    Stock a
+    LEFT JOIN Price b ON b.ticker = a.ticker
+    LEFT JOIN Metric c ON c.ticker = a.ticker
+
+  ORDER BY a.ticker;
+
+--
+-- vStock
+--
+
+CREATE VIEW IF NOT EXISTS vPosition AS
+  WITH cteCost AS
+  (
+    SELECT
+      ticker,
+      account,
+      who,
+      round(sum(cost) / 100.0, 2) as cost
+
+    FROM Trade
+    GROUP BY ticker, account, who
+  ),
+  ctePrice AS
+  (
+    SELECT
+      a.ticker,
+      b.price / a.priceFactor as price
+
+    FROM
+      Stock a
+      LEFT JOIN Price b ON b.ticker = a.ticker
+  )
+  SELECT
+    a.ticker || ':' || a.account || ':' || a.who AS code,
+    a.ticker,
+    a.account,
+    a.who,
+    a.qty,
+    b.price,
+    c.dividend,
+    round(a.qty * b.price, 2) AS value,
+    round(a.qty * c.dividend, 2) AS income,
+    c.dividend / b.price as yield,
+    d.cost AS cost,
+    round(a.qty * b.price - d.cost, 2) as gain
+  FROM
+    Position a
+    LEFT JOIN ctePrice b ON b.ticker = a.ticker
+    LEFT JOIN Metric c ON c.ticker = a.ticker
+    LEFT JOIN cteCost d ON
+      (d.ticker, d.account, d.who) = (a.ticker, a.account, a.who)
+
+  ORDER BY a.ticker, a.account, a.who;
+
+--
+-- vDividend
+--
+
+CREATE VIEW IF NOT EXISTS vDividend AS
+  SELECT
+    julianday(b.date) -
+      julianday('1899-12-30') AS date,
+    a.ticker,
+    a.account,
+    a.who,
+    round(a.qty * b.dividend, 2) as dividend,
+    julianday(b.date, 'start of month') -
+      julianday('1899-12-30') AS month
+
+  FROM
+    Position a
+    JOIN Dividend b ON b.ticker = a.ticker
+
+  WHERE
+    b.date >= date('now', 'start of month')
+
+  ORDER BY b.date, a.ticker;
+
 
 ----------------------------------------------------------------
 -- viewStock

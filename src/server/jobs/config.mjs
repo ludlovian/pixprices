@@ -53,7 +53,7 @@ export default [
   },
 
   {
-    type: 'import',
+    type: 'import-portfolio',
     name: 'Import',
     times: [
       '10:05',
@@ -71,5 +71,43 @@ export default [
     portfolioColumnRow: 3,
     tradesRange: 'Trades!A:H',
     tradesColumnRow: 2
+  },
+
+  {
+    type: 'import-stocks',
+    name: 'Stocks',
+    times: [
+      '10:06',
+      '11:06',
+      '12:06',
+      '13:06',
+      '14:06',
+      '15:06',
+      '16:06',
+      '17:06'
+    ],
+
+    range: 'Stocks!A2:F'
+  },
+
+  {
+    type: 'export',
+    name: 'Export',
+    times: [
+      '10:07',
+      '11:07',
+      '12:07',
+      '13:07',
+      '14:07',
+      '15:07',
+      '16:07',
+      '17:07'
+    ],
+
+    views: {
+      vStock: 'vStocks',
+      vPosition: 'vPositions',
+      vDividend: 'vDividends'
+    }
   }
 ]

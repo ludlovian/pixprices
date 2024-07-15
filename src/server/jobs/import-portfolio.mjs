@@ -1,9 +1,8 @@
 import Debug from '@ludlovian/debug'
+import { readSheet } from '@ludlovian/gsheet'
 import Job from '../model/job.mjs'
-import { readSheet as _readSheet } from '@ludlovian/sheetdb'
 import decimal from '@ludlovian/decimal'
-import { sheetdb } from '../db/index.mjs'
-import { xl2js } from '../dates.mjs'
+import { db } from '../db/index.mjs'
 
 const debug = Debug('pixprices:import-portfolio')
 
@@ -33,27 +32,23 @@ export default class ImportPortfolio extends Job {
   }
 
   async #importPortfolio (task) {
-    const { positions, metrics, trades } = sheetdb.tables
-
     const imported = await this.#importPositionsAndMetrics()
 
-    await this.#updatePositions(positions, imported.positions)
-    await this.#updateMetrics(metrics, imported.metrics)
+    updatePositions(imported.positions)
+    updateMetrics(imported.metrics)
 
     const tradesData = await this.#importTrades()
-    await this.#updateTrades(trades, tradesData)
-
-    await this.#checkMissingStocks()
+    updateTrades(tradesData)
 
     const msg =
-      `Imported ${positions.data.length} positions ` +
-      `and ${trades.data.length} trades`
+      `Imported ${imported.positions.length} positions ` +
+      `and ${tradesData.length} trades`
     task.completeTask(msg)
   }
 
   async #importPositionsAndMetrics () {
     const data = (
-      await readSheet(
+      await readSheetIntoObjects(
         this.spreadsheetId,
         this.portfolioRange,
         this.portfolioColumnRow
@@ -63,129 +58,71 @@ export default class ImportPortfolio extends Job {
     debug('Loaded %d rows from Investments', data.length)
 
     return {
-      positions: readPositions(data),
-      metrics: readMetrics(data)
+      positions: processPositions(data),
+      metrics: processMetrics(data)
     }
-  }
-
-  async #updatePositions (table, data) {
-    debug('Imported %d positions', data.length)
-    await table.load()
-    data.forEach(item => {
-      const { ticker, account, who, qty } = item
-      table.get({ ticker, account, who }).set({ qty })
-    })
-    ;[...table.rows.untouched].forEach(row => row.delete())
-    debug(
-      'Adds: %d, Changes: %d, Deletes: %d',
-      table.rows.added.size,
-      table.rows.changed.size,
-      table.rows.deleted.size
-    )
-    await table.save()
-  }
-
-  async #updateMetrics (table, data) {
-    debug('Imported %d metrics', data.length)
-    await table.load()
-    data.forEach(item => {
-      const { ticker, nav, dividend, eps } = item
-      table.get({ ticker }).set({ nav, dividend, eps })
-    })
-    ;[...table.rows.untouched].forEach(row => row.delete())
-    debug(
-      'Adds: %d, Changes: %d, Deletes: %d',
-      table.rows.added.size,
-      table.rows.changed.size,
-      table.rows.deleted.size
-    )
-    await table.save()
-  }
-
-  async #updateTrades (table, data) {
-    debug('Imported %d trades', data.length)
-    await table.load()
-
-    data.forEach(item => {
-      const { rowid, ...rest } = item
-      table.get({ rowid }).set(rest)
-    })
-    ;[...table.rows.untouched].forEach(row => row.delete())
-    debug(
-      'Adds: %d, Changes: %d, Deletes: %d',
-      table.rows.added.size,
-      table.rows.changed.size,
-      table.rows.deleted.size
-    )
-    await table.save()
   }
 
   async #importTrades () {
     const data = (
-      await readSheet(
+      await readSheetIntoObjects(
         this.spreadsheetId,
         this.tradesRange,
         this.tradesColumnRow
       )
     ).filter(({ ticker }) => !!ticker)
 
-    return readTrades(data)
-  }
+    debug('Loaded %d rows from Trades', data.length)
 
-  async #checkMissingStocks () {
-    const { stocks, prices, trades } = sheetdb.tables
-    await stocks.load()
-    await trades.load()
-
-    // find all the tickers in use
-    const tickers = new Set(trades.data.map(t => t.ticker))
-
-    // and ignore all the ones we already have
-    stocks.data.forEach(s => tickers.delete(s.ticker))
-
-    // bail out if there are none missing
-    // although we resave stocks to ensure DB has it
-    if (!tickers.size) {
-      await stocks.save()
-      return
-    }
-
-    // so we need new ones - let's get the names from prices if we have them
-    await prices.load()
-    for (const ticker of tickers) {
-      const stock = stocks.get({ ticker })
-      const name = prices.data.find(p => p.ticker === ticker)?.name
-      const notes = 'Automatically Added'
-      const currency = 'GBP'
-      const priceFactor = 100
-      stock.update({ name, notes, currency, priceFactor })
-    }
-    debug('Added tickers: %s', [...tickers].join(','))
-    await stocks.save()
+    return processTrades(data)
   }
 }
 
 // -------------------------------------------------
 //
 // Reading the portfolio sheet
+//
 
-function readPositions (data) {
-  return data.map(readPositionsFromRow).flat()
+// Extracting the position objects from the spreadsheet rows
+//
+
+function processPositions (data) {
+  // the positions are in rows with headings 'account:who'
+  return (
+    data
+      .map(row => {
+        const positions = []
+        const { ticker } = row
+        for (const name of Object.keys(row)) {
+          if (name.includes(':')) {
+            const [account, who] = name.split(':')
+            const qty = row[name]
+            positions.push({ ticker, account, who, qty })
+          }
+        }
+
+        return positions
+      })
+      // and then flat to make a single arrat
+      .flat()
+  )
 }
 
-function readPositionsFromRow (row) {
-  return Object.entries(row)
-    .filter(([colName, qty]) => colName.includes(':') && qty)
-    .map(([colName, qty]) => {
-      const [account, who] = colName.split(':')
-      return { ticker: row.ticker, account, who, qty }
-    })
-}
+// Metrics
+//
+// Extracted from the sheet, only if we have some
 
-function readMetrics (data) {
-  return data
-    .filter(({ nav, eps, div }) => nav || eps || div)
-    .map(({ div, ...rest }) => ({ ...rest, dividend: div }))
+function processMetrics (data) {
+  return (
+    data
+      // only where we have a metric
+      .filter(({ nav, eps, div }) => nav || eps || div)
+      // extract only those items, renaming div to dividend
+      .map(({ ticker, nav, eps, div }) => ({
+        ...{ ticker, nav, eps },
+        dividend: div
+      }))
+  )
 }
 
 // -------------------------------------------------
@@ -194,7 +131,7 @@ function readMetrics (data) {
 //
 // Including the calculation of gains
 
-function readTrades (data) {
+function processTrades (data) {
   const zero = decimal('0.00')
 
   // to calculate gains, we store the previous trade by position
@@ -203,69 +140,139 @@ function readTrades (data) {
     posByKey.get(key) ?? posByKey.set(key, { qty: 0, cost: zero }).get(key)
 
   // Each trade is given a trade id (which is also the rowid)
-  let rowid = 1
+  let tradeId = 1
 
   // sheet trades has a "cost" column which is actually:
   // - cost adjustment for everything other than a sale
   // - negative proceeds for a sale
 
-  return data.map(row => {
-    const { ticker, account, who } = row
-    const { qty, cost } = row
-    const key = [ticker, account, who].join(':')
-    const pos = getPos(key)
+  return (
+    data
+      // we only process rows with a valid ticker/account/who, date
+      // and at least one of qty or cost
+      .filter(
+        ({ ticker, account, who, date, qty, cost }) =>
+          ticker && account && who && date && (qty || cost)
+      )
+      // Now we process each trade in turn
+      .map(row => {
+        const { ticker, account, who } = row
+        const { qty, cost } = row
+        const key = [ticker, account, who].join(':')
+        const pos = getPos(key)
 
-    row.rowid = rowid++
-    if (row.date) row.date = xl2js(row.date)
+        row.tradeId = tradeId++
 
-    // Is it a sell
-    if (qty < 0 && cost) {
-      const old = { ...pos }
+        // Is it a sell
+        if (qty < 0 && cost) {
+          const old = { ...pos }
 
-      // cost column is (negative) proceeds
-      row.proceeds = decimal(Math.abs(cost)).withPrecision(2)
+          // cost column is (negative) proceeds
+          row.proceeds = decimal(Math.abs(cost)).withPrecision(2)
 
-      // Update the running position
-      pos.qty -= Math.abs(qty)
-      // new cost is a proportionate reduction
-      pos.cost = old.qty
-        ? old.cost.mul(pos.qty / old.qty).withPrecision(2)
-        : zero
+          // Update the running position
+          pos.qty -= Math.abs(qty)
+          // new cost is a proportionate reduction
+          pos.cost = old.qty
+            ? old.cost.mul(pos.qty / old.qty).withPrecision(2)
+            : zero
 
-      const origCostOfSoldItems = old.cost.sub(pos.cost)
+          const origCostOfSoldItems = old.cost.sub(pos.cost)
 
-      // the reduction in cost basis
-      row.cost = origCostOfSoldItems.neg()
+          // the reduction in cost basis
+          row.cost = origCostOfSoldItems.neg()
 
-      // the gain made
-      row.gain = row.proceeds.sub(origCostOfSoldItems)
-    } else {
-      if (cost !== undefined) {
-        row.cost = decimal(row.cost).withPrecision(2)
-      }
+          // the gain made
+          row.gain = row.proceeds.sub(origCostOfSoldItems)
+        } else {
+          if (cost !== undefined) {
+            row.cost = decimal(row.cost).withPrecision(2)
+          }
 
-      row.proceeds = row.gain = undefined
-      // update running position
-      if (qty) pos.qty += qty
-      if (cost) pos.cost = pos.cost.add(cost).withPrecision(2)
-    }
-    return row
-  })
+          row.proceeds = row.gain = undefined
+          // update running position
+          if (qty) pos.qty += qty
+          if (cost) pos.cost = pos.cost.add(cost).withPrecision(2)
+        }
+        return row
+      })
+  )
 }
 
 // -------------------------------------------------
 //
 // General read sheet into obejcts
 
-async function readSheet (spreadsheetId, range, columnRow) {
-  const cells = await _readSheet(spreadsheetId, range)
+async function readSheetIntoObjects (spreadsheetId, range, columnRow) {
+  const cells = await readSheet(spreadsheetId, range)
   const columns = cells[columnRow - 1]
-  return cells.slice(columnRow).map(row =>
-    Object.fromEntries(
-      row
-        .map((cell, ix) => (columns[ix] ? [columns[ix], cell] : null))
-        .filter(Boolean)
-        .filter(([k, v]) => v !== '')
-    )
+  return (
+    cells
+      // get rid of rows up to & including the column row
+      .slice(columnRow)
+      .map(row => {
+        const obj = {}
+        for (let i = 0; i < columns.length; i++) {
+          const key = columns[i]
+          const val = row[i]
+          if (key && val !== '') obj[key] = val
+        }
+        return obj
+      })
   )
+}
+
+// -------------------------------------------------
+//
+// Updating the database
+//
+
+function updatePositions (data) {
+  db.transaction(() => {
+    db.run('startPositions')
+    data.forEach(pos => {
+      const { ticker, account, who, qty } = pos
+      db.run('addPosition', { ticker, account, who, qty })
+    })
+    db.run('endPositions')
+  })
+}
+
+function updateMetrics (data) {
+  db.transaction(() => {
+    db.run('startMetrics')
+    data.forEach(row => {
+      const { ticker, nav, dividend, eps } = row
+      db.run('addMetric', {
+        ticker,
+        nav: nav ?? null,
+        dividend: dividend ?? null,
+        eps: eps ?? null
+      })
+    })
+    db.run('endMetrics')
+  })
+}
+
+function updateTrades (data) {
+  db.transaction(() => {
+    db.run('startTrades')
+    data.forEach(trade => {
+      const { tradeId, ticker, account, who, date } = trade
+      const { qty, cost, gain, proceeds, notes } = trade
+      db.run('addTrade', {
+        tradeId,
+        ticker,
+        account,
+        who,
+        date,
+        qty: qty ?? null,
+        cost: cost?.toNumber() ?? null,
+        gain: gain?.toNumber() ?? null,
+        proceeds: proceeds?.toNumber() ?? null,
+        notes
+      })
+    })
+    db.run('endTrades')
+  })
 }

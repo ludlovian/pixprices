@@ -1,9 +1,13 @@
 import Debug from '@ludlovian/debug'
 import Parsley from '@ludlovian/parsley'
 import Job from '../model/job.mjs'
-import { sheetdb } from '../db/index.mjs'
+import { db } from '../db/index.mjs'
 
 const debug = Debug('pixprices:fetch-dividends')
+
+const RX_TICKER = /^(?<ticker>\w+)\.*$/
+const RX_DATE = /^\s*(?<day>\d+)-(?<month>\w+)\s*$/
+const RX_DIV_CCY = /^(?<currency>€|\$)?(?<dividend>[\d.]+)(?<pence>p)?$/
 
 export default class FetchDividends extends Job {
   url = 'https://www.dividenddata.co.uk/'
@@ -14,8 +18,8 @@ export default class FetchDividends extends Job {
   }
 
   async receiveData (task, { body: xml }) {
-    const { dividends } = sheetdb.tables
     const { source } = this
+    const today = getToday()
 
     const body = Parsley.from(xml, { loose: true })
     if (!body) throw new Error('Could not parse body')
@@ -23,106 +27,106 @@ export default class FetchDividends extends Job {
     const table = body.find('table')
     if (!table) throw new Error('Could not find table')
 
-    const updated = new Date()
-
     const newDivs = table
       .find('tbody', { blank: true })
       .findAll('tr')
+      // for each row, we gather all the text in the cells
       .map(row => row.findAll('td').map(td => td.textAll.join('').trim()))
-      .map(row => {
-        const ticker = cleanTicker(row[0])
-        const [dividend, currency] = cleanDividend(row[4])
-        const date = cleanDate(row[8], { after: updated })
-        const declared = cleanDate(row[6], { before: date })
-        const exdiv = cleanDate(row[7], { before: date })
-        return {
-          ticker,
-          dividend,
-          currency,
-          declared,
-          exdiv,
-          date,
-          source,
-          updated
+      // we then extract the data
+      .map(row => ({
+        ...parse(row[0], RX_TICKER),
+        ...parse(row[4], RX_DIV_CCY),
+        date: makeDate(parse(row[8], RX_DATE)),
+        declared: makeDate(parse(row[6], RX_DATE)),
+        exdiv: makeDate(parse(row[7], RX_DATE)),
+        source
+      }))
+      // only include vaild rows
+      .filter(r => r.ticker && r.dividend && r.date && r.declared && r.exdiv)
+      // adjust the currency
+      .map(({ dividend, currency, pence, ...rest }) => {
+        dividend = +dividend
+        if (pence) {
+          currency = 'GBP'
+          dividend = dividend / 100
+        } else if (currency === '$') {
+          currency = 'USD'
+        } else if (currency === '€') {
+          currency = 'EUR'
+        } else {
+          currency = 'GBP'
         }
+        return { ...rest, dividend, currency }
       })
-      .filter(d => d.ticker && d.dividend != null && d.date != null)
+      // adjust the dates
+      .map(({ date, declared, exdiv, ...rest }) => {
+        // The page shows future ex-div dates (or those happening today)
+        // The order is always
+        //    declared <= today <= ex-div <= payment
+        //
+        if (declared > today) declared = adjustYear(declared, -1)
+        if (today > exdiv) exdiv = adjustYear(declared, 1)
+        if (exdiv > date) date = adjustYear(date, 1)
+
+        return { date, declared, exdiv, ...rest }
+      })
 
     debug('Have parsed %d divs', newDivs.length)
+    applyDivs(newDivs)
 
-    await dividends.load()
-    const count = applyDivs(dividends, newDivs)
-    await dividends.save()
-
-    const message = `Updated ${count.updated} and added ${count.added} dividends`
-
+    const message = `Read ${newDivs.length} dividends`
     debug(message)
     task.completeTask(message)
   }
 }
 
-const months18 = 18 * 30 * 24 * 60 * 60 * 1000
-
-function applyDivs (dividends, changes) {
-  const then = Date.now() - months18
-  for (const chg of changes) {
-    const { ticker, date, dividend, currency } = chg
-    const { exdiv, declared, source, updated } = chg
-    const row = dividends.get({ date, ticker })
-    row.set({ dividend, currency, exdiv, declared, source, updated })
-  }
-
-  dividends.data.forEach(row => {
-    if (row.updated < then) row.delete()
+function applyDivs (changes) {
+  db.transaction(() => {
+    for (const chg of changes) {
+      const { ticker, date, dividend, currency } = chg
+      const { exdiv, declared, source } = chg
+      const parms = {
+        ...{ ticker, date, dividend, currency },
+        ...{ exdiv, declared, source }
+      }
+      db.run('addDividend', parms)
+    }
   })
-
-  const updated = dividends.rows.changed.size
-  const added = dividends.rows.added.size
-  return { updated, added }
 }
 
-function cleanTicker (ticker) {
-  return ticker.replace(/\.+$/, '')
+function parse (data, rgx) {
+  const match = rgx.exec(data)
+  return match ? match.groups : {}
 }
 
-function cleanDividend (price) {
-  const div = Number(price.replaceAll(/[^\d.]/g, ''))
-
-  if (price.endsWith('p')) {
-    return [div / 100, 'GBP']
-  } else if (price.startsWith('$')) {
-    return [div, 'USD']
-  } else if (price.startsWith('€')) {
-    return [div, 'EUR']
-  } else {
-    return []
-  }
-}
-
-const rgxDate = /^\s*(\d+)-(\w+)\s*$/
-const months = Object.fromEntries(
+const monthLookup = Object.fromEntries(
   'jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec'
     .split(',')
-    .map((mon, i) => [mon, i])
+    .map((mon, i) => [mon, i + 1])
 )
 
-function cleanDate (dateString, { before, after }) {
-  const match = rgxDate.exec(dateString)
-  if (!match) return undefined
-  const d = Number(match[1])
-  const m = months[match[2].toLowerCase()]
-  if (!d || m === undefined) return undefined
-  const now = new Date()
-  const y = now.getFullYear()
-  let date = new Date(y, m, d)
-  if (before) {
-    while (date > before) {
-      date = new Date(date.getFullYear() - 1, m, d)
-    }
-  } else if (after) {
-    while (date < after) {
-      date = new Date(date.getFullYear() + 1, m, d)
-    }
-  }
-  return date
+function adjustYear (dt, yrs) {
+  const y = +dt.slice(0, 4)
+  const m = +dt.slice(5, 2)
+  const d = +dt.slice(8, 2)
+  return formatYMD(y + yrs, m, d)
+}
+
+function getToday () {
+  const d = new Date()
+  return formatYMD(d.getFullYear(), d.getMonth() + 1, d.getDate())
+}
+
+function makeDate ({ day, month }) {
+  const d = +day
+  const m = monthLookup[month.toLowerCase()]
+  const y = new Date().getFullYear()
+  return d && m && y ? formatYMD(y, m, d) : ''
+}
+
+function formatYMD (y, m, d) {
+  const dd = d.toString().padStart(2, '0')
+  const mm = m.toString().padStart(2, '0')
+  const yyyy = y.toString().padStart(4, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
