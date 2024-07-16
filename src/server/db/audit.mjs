@@ -16,7 +16,6 @@ INSERT OR REPLACE INTO schema VALUES(1, 1);
 CREATE TABLE IF NOT EXISTS Changes (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   tableName   TEXT NOT NULL,
-  rowkey      TEXT,
   beforeData  TEXT,
   afterData   TEXT,
   updated     REAL NOT NULL
