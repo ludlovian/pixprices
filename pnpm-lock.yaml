@@ -16,7 +16,7 @@ importers:
         version: https://codeload.github.com/ludlovian/bouncer/tar.gz/72617e7f6e5380acc917f58796e7a230d261d672
       '@ludlovian/configure':
         specifier: github:ludlovian/configure
-        version: https://codeload.github.com/ludlovian/configure/tar.gz/8c230fcd47114d3949cc030c47658bb8b2de63b7
+        version: https://codeload.github.com/ludlovian/configure/tar.gz/bbd23d329e3b15a09e5953940ee81486a0d1465c
       '@ludlovian/debug':
         specifier: github:ludlovian/debug
         version: https://codeload.github.com/ludlovian/debug/tar.gz/720a2f06021239565dd0b62aa823fd8741705a30
@@ -37,7 +37,7 @@ importers:
         version: https://codeload.github.com/ludlovian/sortby/tar.gz/991acec93f54a26b4e74fd29e5712cbb21ad65f1
       '@ludlovian/sqlite':
         specifier: github:ludlovian/sqlite
-        version: https://codeload.github.com/ludlovian/sqlite/tar.gz/80b57176a109fbcb9f3cf8768bf48e7e455486e7(better-sqlite3@11.1.2)
+        version: https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71(better-sqlite3@11.1.2)
       '@ludlovian/static':
         specifier: github:ludlovian/static
         version: https://codeload.github.com/ludlovian/static/tar.gz/cafc9b08dcdab57a2344a6b3f853dbcf1209840e(better-sqlite3@11.1.2)
@@ -257,9 +257,9 @@ packages:
     resolution: {tarball: https://codeload.github.com/ludlovian/clone/tar.gz/21e43fac111069bce2efebb7cf2d42cde2b743b7}
     version: 0.1.0
 
-  '@ludlovian/configure@https://codeload.github.com/ludlovian/configure/tar.gz/8c230fcd47114d3949cc030c47658bb8b2de63b7':
-    resolution: {tarball: https://codeload.github.com/ludlovian/configure/tar.gz/8c230fcd47114d3949cc030c47658bb8b2de63b7}
-    version: 0.3.1
+  '@ludlovian/configure@https://codeload.github.com/ludlovian/configure/tar.gz/bbd23d329e3b15a09e5953940ee81486a0d1465c':
+    resolution: {tarball: https://codeload.github.com/ludlovian/configure/tar.gz/bbd23d329e3b15a09e5953940ee81486a0d1465c}
+    version: 0.4.0
 
   '@ludlovian/debug@https://codeload.github.com/ludlovian/debug/tar.gz/720a2f06021239565dd0b62aa823fd8741705a30':
     resolution: {tarball: https://codeload.github.com/ludlovian/debug/tar.gz/720a2f06021239565dd0b62aa823fd8741705a30}
@@ -311,9 +311,9 @@ packages:
     resolution: {tarball: https://codeload.github.com/ludlovian/sortby/tar.gz/991acec93f54a26b4e74fd29e5712cbb21ad65f1}
     version: 1.1.0
 
-  '@ludlovian/sqlite@https://codeload.github.com/ludlovian/sqlite/tar.gz/80b57176a109fbcb9f3cf8768bf48e7e455486e7':
-    resolution: {tarball: https://codeload.github.com/ludlovian/sqlite/tar.gz/80b57176a109fbcb9f3cf8768bf48e7e455486e7}
-    version: 0.4.0
+  '@ludlovian/sqlite@https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71':
+    resolution: {tarball: https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71}
+    version: 0.4.1
     hasBin: true
     peerDependencies:
       better-sqlite3: '>7.0.0'
@@ -657,8 +657,8 @@ packages:
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
-  electron-to-chromium@1.4.827:
-    resolution: {integrity: sha512-VY+J0e4SFcNfQy19MEoMdaIcZLmDCprqvBtkii1WTCTQHpRvf5N8+3kTYCgL/PcntvwQvmMJWTuDPsq+IlhWKQ==}
+  electron-to-chromium@1.4.828:
+    resolution: {integrity: sha512-QOIJiWpQJDHAVO4P58pwb133Cwee0nbvy/MV1CwzZVGpkH1RX33N3vsaWRCpR6bF63AAq366neZrRTu7Qlsbbw==}
 
   end-of-stream@1.4.4:
     resolution: {integrity: sha512-+uw1inIHVPQoaVuHzRyXd21icM+cnt4CzD5rW+NC1wjOUSTOs+Te7FOv7AhN7vS9x/oIyhLP5PR1H+phQAHu5Q==}
@@ -1361,7 +1361,7 @@ snapshots:
 
   '@ludlovian/clone@https://codeload.github.com/ludlovian/clone/tar.gz/21e43fac111069bce2efebb7cf2d42cde2b743b7': {}
 
-  '@ludlovian/configure@https://codeload.github.com/ludlovian/configure/tar.gz/8c230fcd47114d3949cc030c47658bb8b2de63b7':
+  '@ludlovian/configure@https://codeload.github.com/ludlovian/configure/tar.gz/bbd23d329e3b15a09e5953940ee81486a0d1465c':
     dependencies:
       '@ludlovian/camel': https://codeload.github.com/ludlovian/camel/tar.gz/8389f121d271c7930e99ad82b0dc5dbe16dfcb03
       '@ludlovian/guess': https://codeload.github.com/ludlovian/guess/tar.gz/98ce9a84b91c571001c7ce164fad7ab9ce1946a4
@@ -1381,13 +1381,13 @@ snapshots:
     dependencies:
       '@ludlovian/bouncer': https://codeload.github.com/ludlovian/bouncer/tar.gz/72617e7f6e5380acc917f58796e7a230d261d672
       '@ludlovian/lock': https://codeload.github.com/ludlovian/lock/tar.gz/d1ca32b46e1e59cb8d7736f64a438dabc570555c
-      '@ludlovian/sqlite': https://codeload.github.com/ludlovian/sqlite/tar.gz/80b57176a109fbcb9f3cf8768bf48e7e455486e7(better-sqlite3@11.1.2)
+      '@ludlovian/sqlite': https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71(better-sqlite3@11.1.2)
       better-sqlite3: 11.1.2
 
   '@ludlovian/gsheet@https://codeload.github.com/ludlovian/gsheet/tar.gz/1fdfa50177272d7f210ccab3c475156274dde86d(@googleapis/sheets@9.0.0)':
     dependencies:
       '@googleapis/sheets': 9.0.0
-      '@ludlovian/configure': https://codeload.github.com/ludlovian/configure/tar.gz/8c230fcd47114d3949cc030c47658bb8b2de63b7
+      '@ludlovian/configure': https://codeload.github.com/ludlovian/configure/tar.gz/bbd23d329e3b15a09e5953940ee81486a0d1465c
       '@ludlovian/debug': https://codeload.github.com/ludlovian/debug/tar.gz/720a2f06021239565dd0b62aa823fd8741705a30
 
   '@ludlovian/guess@https://codeload.github.com/ludlovian/guess/tar.gz/98ce9a84b91c571001c7ce164fad7ab9ce1946a4': {}
@@ -1402,14 +1402,14 @@ snapshots:
 
   '@ludlovian/sortby@https://codeload.github.com/ludlovian/sortby/tar.gz/991acec93f54a26b4e74fd29e5712cbb21ad65f1': {}
 
-  '@ludlovian/sqlite@https://codeload.github.com/ludlovian/sqlite/tar.gz/80b57176a109fbcb9f3cf8768bf48e7e455486e7(better-sqlite3@11.1.2)':
+  '@ludlovian/sqlite@https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71(better-sqlite3@11.1.2)':
     dependencies:
       '@ludlovian/bouncer': https://codeload.github.com/ludlovian/bouncer/tar.gz/72617e7f6e5380acc917f58796e7a230d261d672
       better-sqlite3: 11.1.2
 
   '@ludlovian/static@https://codeload.github.com/ludlovian/static/tar.gz/cafc9b08dcdab57a2344a6b3f853dbcf1209840e(better-sqlite3@11.1.2)':
     dependencies:
-      '@ludlovian/configure': https://codeload.github.com/ludlovian/configure/tar.gz/8c230fcd47114d3949cc030c47658bb8b2de63b7
+      '@ludlovian/configure': https://codeload.github.com/ludlovian/configure/tar.gz/bbd23d329e3b15a09e5953940ee81486a0d1465c
       '@ludlovian/filecache': https://codeload.github.com/ludlovian/filecache/tar.gz/e5b2853326c558ec1f01e7594dc6fd1337493b2a(better-sqlite3@11.1.2)
       better-sqlite3: 11.1.2
       mrmime: 2.0.0
@@ -1627,7 +1627,7 @@ snapshots:
   browserslist@4.23.2:
     dependencies:
       caniuse-lite: 1.0.30001642
-      electron-to-chromium: 1.4.827
+      electron-to-chromium: 1.4.828
       node-releases: 2.0.14
       update-browserslist-db: 1.1.0(browserslist@4.23.2)
 
@@ -1704,7 +1704,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  electron-to-chromium@1.4.827: {}
+  electron-to-chromium@1.4.828: {}
 
   end-of-stream@1.4.4:
     dependencies:
