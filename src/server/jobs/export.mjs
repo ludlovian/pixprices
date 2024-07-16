@@ -15,10 +15,12 @@ export default class ExportData extends Job {
   }
 
   start (task) {
-    this.run(task).catch(err => {
-      console.error(err)
-      task.failTask(err.message)
-    })
+    Promise.resolve()
+      .then(() => this.run(task))
+      .catch(err => {
+        console.error(err)
+        task.failTask(err.message)
+      })
 
     return {}
   }

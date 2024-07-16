@@ -5,6 +5,7 @@ import FetchDividends from './fetch-dividends.mjs'
 import ImportPortfolio from './import-portfolio.mjs'
 import ImportStocks from './import-stocks.mjs'
 import ExportData from './export.mjs'
+import Housekeeping from './housekeeping.mjs'
 import jobs from './config.mjs'
 
 const JOBS = {
@@ -13,7 +14,8 @@ const JOBS = {
   dividends: FetchDividends,
   'import-portfolio': ImportPortfolio,
   'import-stocks': ImportStocks,
-  export: ExportData
+  export: ExportData,
+  housekeeping: Housekeeping
 }
 
 function createJob (schedule, data) {
