@@ -109,5 +109,13 @@ export default [
       vPosition: 'vPositions',
       vDividend: 'vDividends'
     }
+  },
+
+  {
+    type: 'housekeeping',
+    name: 'Backup',
+    times: ['17:30'],
+
+    command: 'sqlite3 < scripts/backup.sql'
   }
 ]
