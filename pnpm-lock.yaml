@@ -40,7 +40,7 @@ importers:
         version: https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71(better-sqlite3@11.1.2)
       '@ludlovian/static':
         specifier: github:ludlovian/static
-        version: https://codeload.github.com/ludlovian/static/tar.gz/cafc9b08dcdab57a2344a6b3f853dbcf1209840e(better-sqlite3@11.1.2)
+        version: https://codeload.github.com/ludlovian/static/tar.gz/40648476bc73ec4167b40cd4838d31ebe6227823(better-sqlite3@11.1.2)
       '@ludlovian/subscribe-signal':
         specifier: github:ludlovian/subscribe-signal
         version: https://codeload.github.com/ludlovian/subscribe-signal/tar.gz/fe428dec334a9add8980da0dd59495465bcfe47c(@preact/signals-core@1.7.0)
@@ -74,7 +74,7 @@ importers:
     devDependencies:
       '@rollup/plugin-babel':
         specifier: ^6.0.4
-        version: 6.0.4(@babel/core@7.24.5)(rollup@4.18.1)
+        version: 6.0.4(@babel/core@7.24.9)(rollup@4.18.1)
       '@rollup/plugin-commonjs':
         specifier: ^25.0.8
         version: 25.0.8(rollup@4.18.1)
@@ -89,7 +89,7 @@ importers:
         version: 0.4.4(rollup@4.18.1)
       babel-preset-preact:
         specifier: ^2.0.0
-        version: 2.0.0(@babel/core@7.24.5)
+        version: 2.0.0(@babel/core@7.24.9)
       flattie:
         specifier: ^1.1.1
         version: 1.1.1
@@ -121,12 +121,12 @@ packages:
     resolution: {integrity: sha512-e701mcfApCJqMMueQI0Fb68Amflj83+dvAvHawoBpAz+GDjCIyGHzNwnefjsWJ3xiYAqqiQFoWbspGYBdb2/ng==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/core@7.24.5':
-    resolution: {integrity: sha512-tVQRucExLQ02Boi4vdPp49svNGcfL2GhdTCT9aldhXgCJVAI21EtRfBettiuLUwce/7r6bFdgs6JFkcdTiFttA==}
+  '@babel/core@7.24.9':
+    resolution: {integrity: sha512-5e3FI4Q3M3Pbr21+5xJwCv6ZT6KmGkI0vw3Tozy5ODAQFTIWe37iT8Cr7Ice2Ntb+M3iSKCEWMB1MBgKrW3whg==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/generator@7.24.9':
-    resolution: {integrity: sha512-G8v3jRg+z8IwY1jHFxvCNhOPYPterE4XljNgdGTYfSTtzzwjIswIzIaSPSLs3R7yFuqnqNeay5rjICfqVr+/6A==}
+  '@babel/generator@7.24.10':
+    resolution: {integrity: sha512-o9HBZL1G2129luEUlG1hB4N/nlYNWHnpwlND9eOMclRqqu1YDy2sSYVCFUZwl8I1Gxh+QSRrP2vD7EpUmFVXxg==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-annotate-as-pure@7.24.7':
@@ -277,9 +277,9 @@ packages:
     resolution: {tarball: https://codeload.github.com/ludlovian/equal/tar.gz/9af158101cc2b0cee715fb85b0f61a26858f24c5}
     version: 0.1.0
 
-  '@ludlovian/filecache@https://codeload.github.com/ludlovian/filecache/tar.gz/e5b2853326c558ec1f01e7594dc6fd1337493b2a':
-    resolution: {tarball: https://codeload.github.com/ludlovian/filecache/tar.gz/e5b2853326c558ec1f01e7594dc6fd1337493b2a}
-    version: 0.8.2
+  '@ludlovian/filecache@https://codeload.github.com/ludlovian/filecache/tar.gz/38fc86d7233756384000e018435f639a0b922586':
+    resolution: {tarball: https://codeload.github.com/ludlovian/filecache/tar.gz/38fc86d7233756384000e018435f639a0b922586}
+    version: 0.8.3
     peerDependencies:
       better-sqlite3: '>7.0.0'
 
@@ -318,9 +318,9 @@ packages:
     peerDependencies:
       better-sqlite3: '>7.0.0'
 
-  '@ludlovian/static@https://codeload.github.com/ludlovian/static/tar.gz/cafc9b08dcdab57a2344a6b3f853dbcf1209840e':
-    resolution: {tarball: https://codeload.github.com/ludlovian/static/tar.gz/cafc9b08dcdab57a2344a6b3f853dbcf1209840e}
-    version: 0.3.3
+  '@ludlovian/static@https://codeload.github.com/ludlovian/static/tar.gz/40648476bc73ec4167b40cd4838d31ebe6227823':
+    resolution: {tarball: https://codeload.github.com/ludlovian/static/tar.gz/40648476bc73ec4167b40cd4838d31ebe6227823}
+    version: 0.3.4
     peerDependencies:
       better-sqlite3: '>7.0.0'
 
@@ -1094,8 +1094,8 @@ packages:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
 
-  terser@5.31.2:
-    resolution: {integrity: sha512-LGyRZVFm/QElZHy/CPr/O4eNZOZIzsrQ92y4v9UJe/pFJjypje2yI3C2FmPtvUEnhadlSbmG2nXtdcjHOjCfxw==}
+  terser@5.31.3:
+    resolution: {integrity: sha512-pAfYn3NIZLyZpa83ZKigvj6Rn9c/vd5KfYGX7cN1mnzqgDcxWvrU5ZtAfIKhEXz9nRecw4z3LXkjaq96/qZqAA==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -1176,13 +1176,13 @@ snapshots:
 
   '@babel/compat-data@7.24.9': {}
 
-  '@babel/core@7.24.5':
+  '@babel/core@7.24.9':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@babel/code-frame': 7.24.7
-      '@babel/generator': 7.24.9
+      '@babel/generator': 7.24.10
       '@babel/helper-compilation-targets': 7.24.8
-      '@babel/helper-module-transforms': 7.24.9(@babel/core@7.24.5)
+      '@babel/helper-module-transforms': 7.24.9(@babel/core@7.24.9)
       '@babel/helpers': 7.24.8
       '@babel/parser': 7.24.8
       '@babel/template': 7.24.7
@@ -1196,7 +1196,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/generator@7.24.9':
+  '@babel/generator@7.24.10':
     dependencies:
       '@babel/types': 7.24.9
       '@jridgewell/gen-mapping': 0.3.5
@@ -1235,9 +1235,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/helper-module-transforms@7.24.9(@babel/core@7.24.5)':
+  '@babel/helper-module-transforms@7.24.9(@babel/core@7.24.9)':
     dependencies:
-      '@babel/core': 7.24.5
+      '@babel/core': 7.24.9
       '@babel/helper-environment-visitor': 7.24.7
       '@babel/helper-module-imports': 7.24.7
       '@babel/helper-simple-access': 7.24.7
@@ -1281,18 +1281,18 @@ snapshots:
     dependencies:
       '@babel/types': 7.24.9
 
-  '@babel/plugin-syntax-jsx@7.24.7(@babel/core@7.24.5)':
+  '@babel/plugin-syntax-jsx@7.24.7(@babel/core@7.24.9)':
     dependencies:
-      '@babel/core': 7.24.5
+      '@babel/core': 7.24.9
       '@babel/helper-plugin-utils': 7.24.8
 
-  '@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.5)':
+  '@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.9)':
     dependencies:
-      '@babel/core': 7.24.5
+      '@babel/core': 7.24.9
       '@babel/helper-annotate-as-pure': 7.24.7
       '@babel/helper-module-imports': 7.24.7
       '@babel/helper-plugin-utils': 7.24.8
-      '@babel/plugin-syntax-jsx': 7.24.7(@babel/core@7.24.5)
+      '@babel/plugin-syntax-jsx': 7.24.7(@babel/core@7.24.9)
       '@babel/types': 7.24.9
     transitivePeerDependencies:
       - supports-color
@@ -1306,7 +1306,7 @@ snapshots:
   '@babel/traverse@7.24.8':
     dependencies:
       '@babel/code-frame': 7.24.7
-      '@babel/generator': 7.24.9
+      '@babel/generator': 7.24.10
       '@babel/helper-environment-visitor': 7.24.7
       '@babel/helper-function-name': 7.24.7
       '@babel/helper-hoist-variables': 7.24.7
@@ -1377,7 +1377,7 @@ snapshots:
 
   '@ludlovian/equal@https://codeload.github.com/ludlovian/equal/tar.gz/9af158101cc2b0cee715fb85b0f61a26858f24c5': {}
 
-  '@ludlovian/filecache@https://codeload.github.com/ludlovian/filecache/tar.gz/e5b2853326c558ec1f01e7594dc6fd1337493b2a(better-sqlite3@11.1.2)':
+  '@ludlovian/filecache@https://codeload.github.com/ludlovian/filecache/tar.gz/38fc86d7233756384000e018435f639a0b922586(better-sqlite3@11.1.2)':
     dependencies:
       '@ludlovian/bouncer': https://codeload.github.com/ludlovian/bouncer/tar.gz/72617e7f6e5380acc917f58796e7a230d261d672
       '@ludlovian/lock': https://codeload.github.com/ludlovian/lock/tar.gz/d1ca32b46e1e59cb8d7736f64a438dabc570555c
@@ -1407,10 +1407,10 @@ snapshots:
       '@ludlovian/bouncer': https://codeload.github.com/ludlovian/bouncer/tar.gz/72617e7f6e5380acc917f58796e7a230d261d672
       better-sqlite3: 11.1.2
 
-  '@ludlovian/static@https://codeload.github.com/ludlovian/static/tar.gz/cafc9b08dcdab57a2344a6b3f853dbcf1209840e(better-sqlite3@11.1.2)':
+  '@ludlovian/static@https://codeload.github.com/ludlovian/static/tar.gz/40648476bc73ec4167b40cd4838d31ebe6227823(better-sqlite3@11.1.2)':
     dependencies:
       '@ludlovian/configure': https://codeload.github.com/ludlovian/configure/tar.gz/bbd23d329e3b15a09e5953940ee81486a0d1465c
-      '@ludlovian/filecache': https://codeload.github.com/ludlovian/filecache/tar.gz/e5b2853326c558ec1f01e7594dc6fd1337493b2a(better-sqlite3@11.1.2)
+      '@ludlovian/filecache': https://codeload.github.com/ludlovian/filecache/tar.gz/38fc86d7233756384000e018435f639a0b922586(better-sqlite3@11.1.2)
       better-sqlite3: 11.1.2
       mrmime: 2.0.0
 
@@ -1446,9 +1446,9 @@ snapshots:
       '@preact/signals-core': 1.7.0
       preact: 10.22.1
 
-  '@rollup/plugin-babel@6.0.4(@babel/core@7.24.5)(rollup@4.18.1)':
+  '@rollup/plugin-babel@6.0.4(@babel/core@7.24.9)(rollup@4.18.1)':
     dependencies:
-      '@babel/core': 7.24.5
+      '@babel/core': 7.24.9
       '@babel/helper-module-imports': 7.24.7
       '@rollup/pluginutils': 5.1.0(rollup@4.18.1)
     optionalDependencies:
@@ -1488,7 +1488,7 @@ snapshots:
     dependencies:
       serialize-javascript: 6.0.2
       smob: 1.5.0
-      terser: 5.31.2
+      terser: 5.31.3
     optionalDependencies:
       rollup: 4.18.1
 
@@ -1583,9 +1583,9 @@ snapshots:
 
   array-union@2.1.0: {}
 
-  babel-preset-preact@2.0.0(@babel/core@7.24.5):
+  babel-preset-preact@2.0.0(@babel/core@7.24.9):
     dependencies:
-      '@babel/plugin-transform-react-jsx': 7.24.7(@babel/core@7.24.5)
+      '@babel/plugin-transform-react-jsx': 7.24.7(@babel/core@7.24.9)
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
@@ -2184,7 +2184,7 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
 
-  terser@5.31.2:
+  terser@5.31.3:
     dependencies:
       '@jridgewell/source-map': 0.3.6
       acorn: 8.12.1
