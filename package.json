@@ -10,12 +10,12 @@
     "clean": "rm -rf dist/",
     "format": "prettier-standard 'src/**/*.{mjs,js}'",
     "lint": "standard 'src/**/*.{mjs,js}' | snazzy",
-    "build": "rollup -c",
+    "build": "touch .local.env; rollup -c",
     "build:dev": "npm run build",
     "build:prod": "NODE_ENV=production npm run build",
     "start:dev": "npm run build:dev && npm run start",
     "start:prod": "NODE_ENV=production npm run start",
-    "start": "node --env-file .env dist/index.mjs"
+    "start": "node --env-file .env --env-file .local.env dist/index.mjs"
   },
   "repository": {
     "type": "git",
