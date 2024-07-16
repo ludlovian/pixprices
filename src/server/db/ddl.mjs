@@ -146,7 +146,7 @@ CREATE VIEW IF NOT EXISTS vStock AS
     a.ticker,
     a.incomeType,
     a.name,
-    b.price,
+    b.price / a.priceFactor as price,
     c.dividend,
     julianday(b.updated, 'localtime') -
       julianday('1899-12-30 00:00:00') AS updated
