@@ -37,7 +37,7 @@ importers:
         version: https://codeload.github.com/ludlovian/sortby/tar.gz/991acec93f54a26b4e74fd29e5712cbb21ad65f1
       '@ludlovian/sqlite':
         specifier: github:ludlovian/sqlite
-        version: https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71(better-sqlite3@11.1.2)
+        version: https://codeload.github.com/ludlovian/sqlite/tar.gz/8c0809396a81e0cc16335a27d5f2dd55463fc074(better-sqlite3@11.1.2)
       '@ludlovian/static':
         specifier: github:ludlovian/static
         version: https://codeload.github.com/ludlovian/static/tar.gz/40648476bc73ec4167b40cd4838d31ebe6227823(better-sqlite3@11.1.2)
@@ -311,9 +311,9 @@ packages:
     resolution: {tarball: https://codeload.github.com/ludlovian/sortby/tar.gz/991acec93f54a26b4e74fd29e5712cbb21ad65f1}
     version: 1.1.0
 
-  '@ludlovian/sqlite@https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71':
-    resolution: {tarball: https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71}
-    version: 0.4.1
+  '@ludlovian/sqlite@https://codeload.github.com/ludlovian/sqlite/tar.gz/8c0809396a81e0cc16335a27d5f2dd55463fc074':
+    resolution: {tarball: https://codeload.github.com/ludlovian/sqlite/tar.gz/8c0809396a81e0cc16335a27d5f2dd55463fc074}
+    version: 0.4.3
     hasBin: true
     peerDependencies:
       better-sqlite3: '>7.0.0'
@@ -514,8 +514,8 @@ packages:
   '@types/node@14.18.30':
     resolution: {integrity: sha512-8OEyg4oc/CqN5+LbInKNLA8MfbGzbC+k8lVPePXazuwEVrVeQ9gwMDX00HJwWbC7syc1FWRU6Mow0Lm+mibHAQ==}
 
-  '@types/node@20.14.10':
-    resolution: {integrity: sha512-MdiXf+nDuMvY0gJKxyfZ7/6UFsETO7mGKF54MVD/ekJS6HdFtpZFBgrh6Pseu64XTb2MLyFPlbW6hj8HYRQNOQ==}
+  '@types/node@20.14.11':
+    resolution: {integrity: sha512-kprQpL8MMeszbz6ojB5/tU8PLN4kesnN8Gjzw349rDlNgsSzg90lAVj3llK99Dh7JON+t9AuscPPFW6mPbTnSA==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -657,8 +657,8 @@ packages:
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
-  electron-to-chromium@1.4.828:
-    resolution: {integrity: sha512-QOIJiWpQJDHAVO4P58pwb133Cwee0nbvy/MV1CwzZVGpkH1RX33N3vsaWRCpR6bF63AAq366neZrRTu7Qlsbbw==}
+  electron-to-chromium@1.4.829:
+    resolution: {integrity: sha512-5qp1N2POAfW0u1qGAxXEtz6P7bO1m6gpZr5hdf5ve6lxpLM7MpiM4jIPz7xcrNlClQMafbyUDDWjlIQZ1Mw0Rw==}
 
   end-of-stream@1.4.4:
     resolution: {integrity: sha512-+uw1inIHVPQoaVuHzRyXd21icM+cnt4CzD5rW+NC1wjOUSTOs+Te7FOv7AhN7vS9x/oIyhLP5PR1H+phQAHu5Q==}
@@ -943,8 +943,8 @@ packages:
       encoding:
         optional: true
 
-  node-releases@2.0.14:
-    resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
+  node-releases@2.0.17:
+    resolution: {integrity: sha512-Ww6ZlOiEQfPfXM45v17oabk77Z7mg5bOt7AjDyzy7RjK9OrLrLC8dyZQoAPEOtFX9SaNf1Tdvr5gRJWdTJj7GA==}
 
   object-inspect@1.13.2:
     resolution: {integrity: sha512-IRZSRuzJiynemAXPYtPe5BoI/RESNYR7TYm50MC5Mqbd3Jmw5y790sErYw3V6SryFJD64b74qQQs9wn5Bg/k3g==}
@@ -1036,8 +1036,8 @@ packages:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
     hasBin: true
 
-  semver@7.6.2:
-    resolution: {integrity: sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==}
+  semver@7.6.3:
+    resolution: {integrity: sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -1381,7 +1381,7 @@ snapshots:
     dependencies:
       '@ludlovian/bouncer': https://codeload.github.com/ludlovian/bouncer/tar.gz/72617e7f6e5380acc917f58796e7a230d261d672
       '@ludlovian/lock': https://codeload.github.com/ludlovian/lock/tar.gz/d1ca32b46e1e59cb8d7736f64a438dabc570555c
-      '@ludlovian/sqlite': https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71(better-sqlite3@11.1.2)
+      '@ludlovian/sqlite': https://codeload.github.com/ludlovian/sqlite/tar.gz/8c0809396a81e0cc16335a27d5f2dd55463fc074(better-sqlite3@11.1.2)
       better-sqlite3: 11.1.2
 
   '@ludlovian/gsheet@https://codeload.github.com/ludlovian/gsheet/tar.gz/1fdfa50177272d7f210ccab3c475156274dde86d(@googleapis/sheets@9.0.0)':
@@ -1402,7 +1402,7 @@ snapshots:
 
   '@ludlovian/sortby@https://codeload.github.com/ludlovian/sortby/tar.gz/991acec93f54a26b4e74fd29e5712cbb21ad65f1': {}
 
-  '@ludlovian/sqlite@https://codeload.github.com/ludlovian/sqlite/tar.gz/fd760856f40feb7ee0d103d98c7e6222b70d3b71(better-sqlite3@11.1.2)':
+  '@ludlovian/sqlite@https://codeload.github.com/ludlovian/sqlite/tar.gz/8c0809396a81e0cc16335a27d5f2dd55463fc074(better-sqlite3@11.1.2)':
     dependencies:
       '@ludlovian/bouncer': https://codeload.github.com/ludlovian/bouncer/tar.gz/72617e7f6e5380acc917f58796e7a230d261d672
       better-sqlite3: 11.1.2
@@ -1552,18 +1552,18 @@ snapshots:
 
   '@types/fs-extra@8.1.5':
     dependencies:
-      '@types/node': 20.14.10
+      '@types/node': 20.14.11
 
   '@types/glob@7.2.0':
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 20.14.10
+      '@types/node': 20.14.11
 
   '@types/minimatch@5.1.2': {}
 
   '@types/node@14.18.30': {}
 
-  '@types/node@20.14.10':
+  '@types/node@20.14.11':
     dependencies:
       undici-types: 5.26.5
 
@@ -1627,8 +1627,8 @@ snapshots:
   browserslist@4.23.2:
     dependencies:
       caniuse-lite: 1.0.30001642
-      electron-to-chromium: 1.4.828
-      node-releases: 2.0.14
+      electron-to-chromium: 1.4.829
+      node-releases: 2.0.17
       update-browserslist-db: 1.1.0(browserslist@4.23.2)
 
   buffer-equal-constant-time@1.0.1: {}
@@ -1704,7 +1704,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  electron-to-chromium@1.4.828: {}
+  electron-to-chromium@1.4.829: {}
 
   end-of-stream@1.4.4:
     dependencies:
@@ -1992,13 +1992,13 @@ snapshots:
 
   node-abi@3.65.0:
     dependencies:
-      semver: 7.6.2
+      semver: 7.6.3
 
   node-fetch@2.7.0:
     dependencies:
       whatwg-url: 5.0.0
 
-  node-releases@2.0.14: {}
+  node-releases@2.0.17: {}
 
   object-inspect@1.13.2: {}
 
@@ -2116,7 +2116,7 @@ snapshots:
 
   semver@6.3.1: {}
 
-  semver@7.6.2: {}
+  semver@7.6.3: {}
 
   serialize-javascript@6.0.2:
     dependencies:
