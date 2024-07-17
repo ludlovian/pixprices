@@ -36,6 +36,5 @@ export default configure('PIXPRICES_', {
   prunePriceAfter: '30d',
 
   // SQLite database
-  portfolioDB: resolve('db/portfolio.db'),
-  auditDB: resolve('db/audit.db')
+  databaseDir: resolve('db')
 })

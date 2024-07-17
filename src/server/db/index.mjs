@@ -1,41 +1,58 @@
+import { existsSync } from 'node:fs'
+import assert from 'node:assert'
+import { join } from 'node:path'
 import Database from '@ludlovian/sqlite'
-// import { createDB as createSheetDB } from './sheetdb.mjs'
+
 import ddl from './ddl.mjs'
 import tempDDL from './temp.mjs'
 import auditDDL from './audit.mjs'
+import historyDDL from './history.mjs'
+
 import config from '../config.mjs'
 
-// Sheet Database
+const dbDir = config.databaseDir
 
-// const sheetdb = createSheetDB()
+assert(existsSync(dbDir), 'The database directory does not exist')
 
-// SQLite database
-
-const SCHEMA_VERSIONS = {
-  portfolio: 2,
-  audit: 1
+const databaseFiles = {
+  portfolio: 'portfolio.db',
+  audit: 'audit.db',
+  history: 'history.db'
 }
 
-const db = new Database(config.portfolioDB, {
+const schemaVersion = {
+  portfolio: 4,
+  audit: 4,
+  history: 4
+}
+
+const db = new Database(join(dbDir, databaseFiles.portfolio), {
   createDDL: ddl,
   runtimeDDL: tempDDL,
-  checkSchema: SCHEMA_VERSIONS.portfolio
+  checkSchema: schemaVersion.portfolio
 })
 
-const auditDB = new Database(config.auditDB, {
+const auditDb = new Database(join(dbDir, databaseFiles.audit), {
   createDDL: auditDDL,
-  checkSchema: SCHEMA_VERSIONS.audit
+  checkSchema: schemaVersion.audit
 })
 
-auditDB.close()
-db.run('attach $auditDB as audit', { auditDB: config.auditDB })
-db.trackChanges('Dividend', 'Changes')
-db.trackChanges('Metric', 'Changes')
-db.trackChanges('Position', 'Changes')
-db.trackChanges('Trade', 'Changes')
-db.trackChanges('Stock', 'Changes')
+const historyDb = new Database(join(dbDir, databaseFiles.history), {
+  createDDL: historyDDL,
+  checkSchema: schemaVersion.history
+})
+
+db.run('attach $file as audit', { file: join(dbDir, databaseFiles.audit) })
+
+auditDb.close()
+historyDb.close()
+
+db.trackChanges('Dividend', { dest: 'Changes', exclude: 'timestamp' })
+db.trackChanges('Metric', { dest: 'Changes', exclude: 'timestamp' })
+db.trackChanges('Position', { dest: 'Changes', exclude: 'timestamp' })
+db.trackChanges('Trade', { dest: 'Changes', exclude: 'timestamp' })
+db.trackChanges('Stock', { dest: 'Changes', exclude: 'timestamp' })
 
 // exports
 
-// export { db, sheetdb }
 export { db }

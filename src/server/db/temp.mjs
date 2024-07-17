@@ -31,16 +31,29 @@ CREATE TEMP VIEW addPrice
 CREATE TEMP TRIGGER addPrice_sproc INSTEAD OF INSERT ON addPrice
 BEGIN
 
-  INSERT INTO Price(ticker, price, name, source, updated)
-    VALUES (new.ticker, new.price, new.name, new.source, julianday())
+  INSERT INTO Price
+    (
+      ticker,
+      price,
+      name,
+      source,
+      timestamp
+    )
+    VALUES (
+      new.ticker,
+      new.price,
+      new.name,
+      new.source,
+      julianday()
+    )
 
     ON CONFLICT(ticker) DO UPDATE
 
       SET   (price, name, source) =
-              (new.price, new.name, new.source),
-            updated = julianday()
-      WHERE (price, name, source) IS NOT (new.price, new.name, new.source)
-        AND updated < julianday() - ifnull(new.recent / 86_400_400, 0);
+              (excluded.price, excluded.name, excluded.source),
+            timestamp = excluded.timestamp
+      WHERE (price, name, source) IS NOT (excluded.price, excluded.name, excluded.source)
+        AND timestamp < julianday() - ifnull(new.recent / 86_400_400, 0);
 
 END;
 
@@ -59,7 +72,7 @@ CREATE TEMP TRIGGER prunePrice_sproc INSTEAD OF INSERT ON prunePrice
 BEGIN
 
   DELETE FROM Price
-    WHERE updated < julianday() - new.period / 86_400_000;
+    WHERE timestamp < julianday() - new.period / 86_400_000;
 
 END;
 
@@ -87,7 +100,7 @@ BEGIN
       exdiv,
       declared,
       source,
-      updated
+      timestamp
     )
     VALUES
       (
@@ -105,7 +118,7 @@ BEGIN
 
       SET (dividend, currency, exdiv, declared, source) = 
             (excluded.dividend, excluded.currency, excluded.exdiv, excluded.declared, excluded.source),
-          updated = excluded.updated
+          timestamp = excluded.timestamp
       WHERE (dividend, currency, exdiv, declared, source) IS NOT
             (excluded.dividend, excluded.currency, excluded.exdiv, excluded.declared, excluded.source);
 
@@ -147,13 +160,26 @@ CREATE TEMP VIEW addPosition
 CREATE TEMP TRIGGER addPosition_sproc INSTEAD OF INSERT ON addPosition
 BEGIN
 
-  INSERT INTO Position (ticker, account, who, qty, updated)
-    VALUES (new.ticker, new.account, new.who, new.qty, julianday())
+  INSERT INTO Position
+    (
+      ticker,
+      account,
+      who,
+      qty,
+      timestamp
+    )
+    VALUES (
+      new.ticker,
+      new.account,
+      new.who,
+      new.qty,
+      julianday()
+    )
 
     ON CONFLICT (ticker, account, who) DO UPDATE
 
       SET qty = excluded.qty,
-          updated = excluded.updated
+          timestamp = excluded.timestamp
 
       WHERE qty IS NOT excluded.qty;
 
@@ -215,14 +241,27 @@ CREATE TEMP VIEW addMetric
 CREATE TEMP TRIGGER addMetric_sproc INSTEAD OF INSERT ON addMetric
 BEGIN
 
-  INSERT INTO Metric (ticker, dividend, nav, eps, updated)
-    VALUES (new.ticker, new.dividend, new.nav, new.eps, julianday())
+  INSERT INTO Metric
+    (
+      ticker,
+      dividend,
+      nav,
+      eps,
+      timestamp
+    )
+    VALUES (
+      new.ticker,
+      new.dividend,
+      new.nav,
+      new.eps,
+      julianday()
+    )
 
     ON CONFLICT (ticker) DO UPDATE
 
       SET (dividend, nav, eps) =
             (excluded.dividend, excluded.nav, excluded.eps),
-          updated = excluded.updated
+          timestamp = excluded.timestamp
 
       WHERE (dividend, nav, eps) IS NOT
               (excluded.dividend, excluded.nav, excluded.eps);
@@ -301,23 +340,22 @@ BEGIN
       gain,
       proceeds,
       notes,
-      updated
+      timestamp
     )
 
-    VALUES
-      (
-        new.tradeId,
-        new.ticker,
-        new.account,
-        new.who,
-        date(ROUND(new.date) + julianday('1899-12-30 00:00:00')),
-        new.qty,
-        CAST(100.0 * new.cost AS INTEGER),
-        CAST(100.0 * new.gain AS INTEGER),
-        CAST(100.0 * new.proceeds AS INTEGER),
-        new.notes,
-        julianday()
-      )
+    VALUES (
+      new.tradeId,
+      new.ticker,
+      new.account,
+      new.who,
+      date(ROUND(new.date) + julianday('1899-12-30')),
+      new.qty,
+      CAST(100.0 * new.cost AS INTEGER),
+      CAST(100.0 * new.gain AS INTEGER),
+      CAST(100.0 * new.proceeds AS INTEGER),
+      new.notes,
+      julianday()
+    )
 
     -- upsert the row if anything changed
 
@@ -329,7 +367,7 @@ BEGIN
           (excluded.ticker, excluded.account, excluded.who,
             excluded.date, excluded.qty, excluded.cost, excluded.gain,
             excluded.proceeds, excluded.notes),
-        updated = excluded.updated
+        timestamp = excluded.timestamp
 
       WHERE
         (ticker, account, who, date,
@@ -406,10 +444,9 @@ BEGIN
       notes,
       currency,
       priceFactor,
-      updated
+      timestamp
     )
-    VALUES
-    (
+    VALUES (
       new.ticker,
       new.name,
       new.incomeType,
@@ -424,7 +461,7 @@ BEGIN
       SET
         (name, incomeType, notes, currency, priceFactor) =
           (excluded.name, excluded.incomeType, excluded.notes, excluded.currency, excluded.priceFactor),
-        updated = excluded.updated
+        timestamp = excluded.timestamp
 
       WHERE
         (name, incomeType, notes, currency, priceFactor) IS NOT
@@ -451,7 +488,7 @@ BEGIN
       notes,
       currency,
       priceFactor,
-      updated
+      timestamp
     )
     WITH cteUsedTickers AS
       (
@@ -473,9 +510,9 @@ BEGIN
     FROM
       cteUsedTickers a
       LEFT JOIN Price b ON b.ticker = a.ticker
-      WHERE a.ticker NOT IN (
-        SELECT ticker FROM Stock
-      );
+      LEFT JOIN Stock c ON c.ticker = a.ticker
+
+    WHERE c.ticker IS NULL;
 
   DELETE FROM Stock
     WHERE ticker IN (

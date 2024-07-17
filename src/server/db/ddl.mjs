@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS schema (
   id INTEGER PRIMARY KEY NOT NULL check (id = 1),
   version INTEGER NOT NULL
 );
-INSERT OR REPLACE INTO schema VALUES(1, 2);
+INSERT OR IGNORE INTO schema VALUES(1, 4);
 
 
 ----------------------------------------------------------------
@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS Stock (
   notes       TEXT,
   currency    TEXT,
   priceFactor INTEGER,
-  updated     REAL NOT NULL
+  timestamp   REAL NOT NULL,
+  utcUpdated  TEXT GENERATED ALWAYS AS (datetime(timestamp))
 );
 
 ----------------------------------------------------------------
@@ -52,7 +53,8 @@ CREATE TABLE IF NOT EXISTS Price (
   price       REAL,
   name        TEXT,
   source      TEXT,
-  updated     REAL NOT NULL
+  timestamp   REAL NOT NULL,
+  utcUpdated  TEXT GENERATED ALWAYS AS (datetime(timestamp))
 );
 
 ----------------------------------------------------------------
@@ -66,7 +68,8 @@ CREATE TABLE IF NOT EXISTS Metric (
   dividend    REAL,
   nav         REAL,
   eps         REAL,
-  updated     REAL NOT NULL
+  timestamp   REAL NOT NULL,
+  utcUpdated  TEXT GENERATED ALWAYS AS (datetime(timestamp))
 );
 
 ----------------------------------------------------------------
@@ -83,7 +86,8 @@ CREATE TABLE IF NOT EXISTS Dividend (
   exdiv       TEXT NOT NULL,
   declared    TEXT NOT NULL,
   source      TEXT,
-  updated     REAL NOT NULL,
+  timestamp   REAL NOT NULL,
+  utcUpdated  TEXT GENERATED ALWAYS AS (datetime(timestamp)),
   PRIMARY KEY (ticker, date)
 );
 CREATE INDEX IF NOT EXISTS Dividend_ix_1 ON Dividend(date, ticker);
@@ -99,7 +103,8 @@ CREATE TABLE IF NOT EXISTS Position (
   account     TEXT NOT NULL,
   who         TEXT NOT NULL,
   qty         INTEGER NOT NULL,
-  updated     REAL NOT NULL,
+  timestamp   REAL NOT NULL,
+  utcUpdated  TEXT GENERATED ALWAYS AS (datetime(timestamp)),
   PRIMARY KEY (ticker, account, who)
 );
 
@@ -120,7 +125,8 @@ CREATE TABLE IF NOT EXISTS Trade (
   gain        INTEGER,
   proceeds    INTEGER,
   notes       TEXT,
-  updated     REAL NOT NULL
+  timestamp   REAL NOT NULL,
+  utcUpdated  TEXT GENERATED ALWAYS AS (datetime(timestamp))
 );
 
 CREATE INDEX IF NOT EXISTS Trade_ix_1 ON Trade(ticker, account, who, date);
@@ -148,8 +154,8 @@ CREATE VIEW IF NOT EXISTS vStock AS
     a.name,
     b.price / a.priceFactor as price,
     c.dividend,
-    julianday(b.updated, 'localtime') -
-      julianday('1899-12-30 00:00:00') AS updated
+    julianday(b.timestamp, 'localtime') -
+      julianday('1899-12-30') AS updated
 
   FROM
     Stock a
@@ -194,9 +200,9 @@ CREATE VIEW IF NOT EXISTS vPosition AS
     c.dividend,
     round(a.qty * b.price, 2) AS value,
     round(a.qty * c.dividend, 2) AS income,
-    c.dividend / b.price as yield,
+    c.dividend / b.price AS yield,
     d.cost AS cost,
-    round(a.qty * b.price - d.cost, 2) as gain
+    round(a.qty * b.price - d.cost, 2) AS gain
   FROM
     Position a
     LEFT JOIN ctePrice b ON b.ticker = a.ticker
@@ -212,14 +218,18 @@ CREATE VIEW IF NOT EXISTS vPosition AS
 
 CREATE VIEW IF NOT EXISTS vDividend AS
   SELECT
-    julianday(b.date) -
-      julianday('1899-12-30') AS date,
+    CAST(
+      julianday(b.date) - julianday('1899-12-30')
+      AS INTEGER
+    ) AS date,
     a.ticker,
     a.account,
     a.who,
     round(a.qty * b.dividend, 2) as dividend,
-    julianday(b.date, 'start of month') -
-      julianday('1899-12-30') AS month
+    CAST(
+      julianday(b.date, 'start of month') - julianday('1899-12-30')
+      AS INTEGER
+    ) AS month
 
   FROM
     Position a
@@ -230,95 +240,11 @@ CREATE VIEW IF NOT EXISTS vDividend AS
 
   ORDER BY b.date, a.ticker;
 
-
 ----------------------------------------------------------------
--- viewStock
 --
--- Useful data about a stock
---
--- Only includes stocks where we have
---  - positions
---  - trades
---  - metrics
---  - stocks with a priceFactor
-
-CREATE VIEW IF NOT EXISTS viewStock AS
-  WITH cteStock AS (
-    SELECT ticker FROM Stock WHERE priceFactor IS NOT NULL
-    UNION
-    SELECT ticker FROM Position WHERE qty > 0
-    UNION
-    SELECT ticker FROM Trade
-    UNION
-    SELECT ticker FROM Metric
-  )
-  SELECT  a.ticker,
-          a.name,
-          a.incomeType,
-          a.notes,
-          100.0 * c.price / a.priceFactor AS price,
-          100.0 * d.dividend AS dividend,
-          d.dividend * a.priceFactor / c.price AS yield
-  FROM       Stock    a
-  JOIN       cteStock b ON b.ticker = a.ticker
-  LEFT JOIN  Price    c ON c.ticker = a.ticker
-  LEFT JOIN  Metric   d ON d.ticker = a.ticker
-  ORDER BY a.ticker;
-
-----------------------------------------------------------------
--- viewPosition
---
--- All values are in pennies
---  - prices and dps are floating
---  - actual cash amounts are rounded to integers
+-- Views
 --
 ----------------------------------------------------------------
-
-CREATE VIEW IF NOT EXISTS viewPosition AS
-  WITH cteCost AS (
-    SELECT ticker, account, who, SUM(cost) AS cost
-    FROM Trade
-    GROUP BY ticker, account, who
-  )
-  SELECT
-    a.ticker,
-    a.account,
-    a.who,
-    a.qty,
-    b.price,
-    b.dividend,
-    CAST(a.qty * b.price AS INTEGER) AS value,
-    CAST(a.qty * b.dividend AS INTEGER) AS income,
-    b.yield,
-    c.cost,
-    CAST(a.qty * b.price - c.cost AS INTEGER) AS gain
-  FROM      Position  a
-  LEFT JOIN viewStock b ON b.ticker = a.ticker
-  LEFT JOIN cteCost   c ON (c.ticker, c.account, c.who) =
-                           (a.ticker, a.account, a.who)
-  ORDER BY a.ticker, a.account, a.who;
-
-----------------------------------------------------------------
--- viewDividend
---
--- All monetary values are in pennies
---
-----------------------------------------------------------------
-
-CREATE VIEW IF NOT EXISTS viewDividend AS
-  SELECT
-    b.date,
-    a.ticker,
-    a.account,
-    a.who,
-    CAST(100 * a.qty * b.dividend AS INTEGER) AS dividend
-  FROM Position a
-  JOIN Dividend b USING (ticker)
-  ORDER BY date, ticker;
-
-----------------------------------------------------------------
--- viewError
---
 
 CREATE VIEW IF NOT EXISTS viewError (code, message) AS
   WITH
@@ -351,7 +277,7 @@ UNION ALL
          'No recent price for stock'
   FROM cteCurrentStock a
   JOIN Price b USING (ticker)
-  WHERE b.updated < julianday('now','-1 week')
+  WHERE b.timestamp < julianday('now','-1 week')
 UNION ALL
   SELECT a.ticker || ':' || a.account || ':' || a.who,
          'Position does not match trades'
