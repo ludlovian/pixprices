@@ -11,6 +11,9 @@ export default function ServerStatus () {
       <p class='text'>
         <span class='h4'>Server Status</span>
         <small class='text mx-2'>version {model.version}</small>
+        {model.isDev && (
+          <b>DEVELOPMENT</b>
+        )}
       </p>
       <div class='row'>
         <div class='text'>
